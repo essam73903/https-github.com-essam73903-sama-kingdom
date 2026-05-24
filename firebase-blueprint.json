@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Service": {
+      "title": "Service",
+      "description": "Represents an electronic service package offered by the office.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "govFee": { "type": "number" },
+        "officeFee": { "type": "number" },
+        "category": { "type": "string", "enum": ["visa", "gov", "transport", "other"] },
+        "icon": { "type": "string" },
+        "paymentMethods": { "type": "array" }
+      },
+      "required": ["id", "name", "govFee", "officeFee", "category", "icon"]
+    },
+    "BookingRequest": {
+      "title": "BookingRequest",
+      "description": "Represents an interactive booking transaction or clearance request tracker.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "serviceId": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "processing", "completed", "cancelled"] },
+        "notes": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "attachedFileName": { "type": "string" },
+        "attachedFileData": { "type": "string" },
+        "attachedFileSize": { "type": "string" },
+        "isArchived": { "type": "boolean" },
+        "isPaid": { "type": "boolean" },
+        "paidAmount": { "type": "number" },
+        "paymentMethod": { "type": "string" },
+        "paymentRef": { "type": "string" },
+        "paymentCountry": { "type": "string" },
+        "rating": { "type": "number" },
+        "ratingComment": { "type": "string" }
+      },
+      "required": ["id", "clientName", "phoneNumber", "serviceId", "serviceName", "status", "date"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Represents accounting ledger invoice items.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "serviceName": { "type": "string" },
+        "govFee": { "type": "number" },
+        "officeFee": { "type": "number" },
+        "tax": { "type": "number" },
+        "total": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "invoiceNumber": { "type": "string" }
+      },
+      "required": ["id", "clientName", "serviceName", "govFee", "officeFee", "tax", "total", "date", "invoiceNumber"]
+    },
+    "JobVacancy": {
+      "title": "JobVacancy",
+      "description": "Represents recruiting board openings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "department": { "type": "string" },
+        "location": { "type": "string" },
+        "type": { "type": "string" },
+        "salary": { "type": "string" },
+        "description": { "type": "string" },
+        "requirements": { "type": "array" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "title", "department", "location", "type", "salary", "description", "requirements", "date"]
+    },
+    "JobApplication": {
+      "title": "JobApplication",
+      "description": "Represents recruiting requests.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "jobId": { "type": "string" },
+        "jobTitle": { "type": "string" },
+        "applicantName": { "type": "string" },
+        "applicantPhone": { "type": "string" },
+        "applicantEmail": { "type": "string" },
+        "qualification": { "type": "string" },
+        "notes": { "type": "string" },
+        "experienceYears": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" }
+      },
+      "required": ["id", "jobId", "jobTitle", "applicantName", "applicantPhone", "applicantEmail", "qualification", "experienceYears", "date"]
+    }
+  },
+  "firestore": {
+    "/services/{serviceId}": {
+      "schema": "Service",
+      "description": "Available office services and packages"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "BookingRequest",
+      "description": "Customer bookings and tracking requests"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Office accounting ledgers and receipts"
+    },
+    "/job_vacancies/{vacancyId}": {
+      "schema": "JobVacancy",
+      "description": "Open recruitment positions"
+    },
+    "/job_applications/{applicationId}": {
+      "schema": "JobApplication",
+      "description": "Job application forms submitted by vacancy applicants"
+    }
+  }
+}

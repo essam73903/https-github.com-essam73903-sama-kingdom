@@ -1,0 +1,127 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail(email) {
+      return isSignedIn() && request.auth.token.email == email && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      return isVerifiedEmail("essam77142@gmail.com");
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+    
+    // Services Rules
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(serviceId) && isValidService(incoming());
+      
+      function isValidService(data) {
+        return data.keys().hasAll(['id', 'name', 'govFee', 'officeFee', 'category', 'icon']) 
+          && data.keys().size() <= 8
+          && data.id is string && data.id.size() <= 128
+          && data.name is string && data.name.size() <= 100
+          && data.govFee is number
+          && data.officeFee is number
+          && data.category is string && data.category in ['visa', 'gov', 'transport', 'other']
+          && data.icon is string && data.icon.size() <= 100;
+      }
+    }
+    
+    // Bookings Rules
+    match /bookings/{bookingId} {
+      allow get: if true;
+      allow list: if isAdmin() || (resource.data.phoneNumber is string && resource.data.phoneNumber == request.query.limit);
+      
+      allow create: if isValidId(bookingId) && isValidBooking(incoming());
+      allow update: if isValidId(bookingId) && (
+        isAdmin() || 
+        (incoming().status == existing().status && incoming().clientName == existing().clientName && incoming().phoneNumber == existing().phoneNumber && (
+          // Allow customer to submit rating & comment to completed booking
+          existing().status == 'completed' && 
+          incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'ratingComment']) &&
+          incoming().rating is number && incoming().rating >= 1 && incoming().rating <= 5
+        ))
+      );
+      allow delete: if isAdmin();
+
+      function isValidBooking(data) {
+        return data.keys().hasAll(['id', 'clientName', 'phoneNumber', 'serviceId', 'serviceName', 'status', 'date'])
+          && data.keys().size() <= 20
+          && data.id is string && data.id.size() <= 128
+          && data.clientName is string && data.clientName.size() <= 100
+          && data.phoneNumber is string && data.phoneNumber.size() <= 20
+          && data.serviceId is string && data.serviceId.size() <= 128
+          && data.serviceName is string && data.serviceName.size() <= 100
+          && data.status is string && data.status in ['pending', 'processing', 'completed', 'cancelled']
+          && data.date is string && data.date.size() <= 50;
+      }
+    }
+    
+    // Transactions Rules
+    match /transactions/{transactionId} {
+      allow read, write: if isAdmin();
+    }
+    
+    // Job Vacancies Rules
+    match /job_vacancies/{vacancyId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(vacancyId) && isValidVacancy(incoming());
+
+      function isValidVacancy(data) {
+        return data.keys().hasAll(['id', 'title', 'department', 'location', 'type', 'salary', 'description', 'requirements', 'date'])
+          && data.keys().size() <= 12
+          && data.id is string && data.id.size() <= 128
+          && data.title is string && data.title.size() <= 100
+          && data.department is string && data.department.size() <= 100
+          && data.location is string && data.location.size() <= 100
+          && data.type is string && data.type.size() <= 50
+          && data.salary is string && data.salary.size() <= 50
+          && data.description is string && data.description.size() <= 5000
+          && data.requirements is list
+          && data.date is string && data.date.size() <= 50;
+      }
+    }
+    
+    // Job Applications Rules
+    match /job_applications/{applicationId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(applicationId) && isValidApplication(incoming());
+      allow update, delete: if isAdmin();
+
+      function isValidApplication(data) {
+        return data.keys().hasAll(['id', 'jobId', 'jobTitle', 'applicantName', 'applicantPhone', 'applicantEmail', 'qualification', 'experienceYears', 'date'])
+          && data.keys().size() <= 12
+          && data.id is string && data.id.size() <= 128
+          && data.jobId is string && data.jobId.size() <= 128
+          && data.jobTitle is string && data.jobTitle.size() <= 100
+          && data.applicantName is string && data.applicantName.size() <= 100
+          && data.applicantPhone is string && data.applicantPhone.size() <= 20
+          && data.applicantEmail is string && data.applicantEmail.size() <= 100
+          && data.qualification is string && data.qualification.size() <= 100
+          && data.experienceYears is number
+          && data.date is string && data.date.size() <= 50;
+      }
+    }
+  }
+}

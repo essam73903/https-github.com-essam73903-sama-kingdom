@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+:root {
+  font-family: 'Tajawal', sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Custom fade-in animations for smooth tab transitions */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* 
+  =========================================
+  PRINT STYLESHEET FOR PROFESSIONAL INVOICE 
+  =========================================
+*/
+@media print {
+  /* Hide overall body structure and backdrops */
+  body, html, #root {
+    background: #ffffff !important;
+    color: #000000 !important;
+    height: auto !important;
+    overflow: visible !important;
+    font-family: 'Tajawal', "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  /* Hide absolutely everything except our printable invoice page */
+  nav, 
+  footer, 
+  .print\:hidden,
+  button,
+  .fixed {
+    display: none !important;
+    background: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* Make the invoice relative to fill the printed page */
+  .fixed {
+    position: relative !important;
+    inset: auto !important;
+    z-index: auto !important;
+    display: block !important;
+    background: transparent !important;
+  }
+
+  /* Target the exact print container parent and reset alignment shadow borders */
+  div[id="print-area"] {
+    width: 100% !important;
+    max-width: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure background colors of tables show in prints (modern browsers) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
