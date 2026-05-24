@@ -21,6 +21,7 @@ export interface BookingRequest {
   attachedFileName?: string;
   attachedFileData?: string; // Base64 data URI or indicator
   attachedFileSize?: string;
+  attachments?: { name: string; data: string; size: string }[];
   isArchived?: boolean;
   isPaid?: boolean;
   paidAmount?: number;

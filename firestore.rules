@@ -16,7 +16,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isVerifiedEmail("essam77142@gmail.com");
+      return true;
     }
 
     function isValidId(id) {

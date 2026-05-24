@@ -647,7 +647,10 @@ export default function App() {
   const [attachedFileName, setAttachedFileName] = useState('');
   const [attachedFileData, setAttachedFileData] = useState('');
   const [attachedFileSize, setAttachedFileSize] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<{ name: string; data: string; size: string }[]>([]);
+  const [selectedAttachmentIndex, setSelectedAttachmentIndex] = useState<number>(0);
   const [selectedViewBooking, setSelectedViewBooking] = useState<BookingRequest | null>(null);
+  const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
 
   // Service management filtering & sorting state
   const [servicesSearchQuery, setServicesSearchQuery] = useState('');
@@ -816,17 +819,22 @@ export default function App() {
       runAutoArchiving(false);
     }, 1200);
 
-    // 1. Services Sync
+    // 1. Services Sync (Public)
     const unsubscribeServices = onSnapshot(collection(db, 'services'), (snapshot) => {
       if (snapshot.empty) {
-        // Bootstrap services
-        DEFAULT_SERVICES.forEach(async (srv) => {
-          try {
-            await setDoc(doc(db, 'services', srv.id), srv);
-          } catch (e) {
-            console.error("Error bootstrapping service:", e);
-          }
-        });
+        if (auth.currentUser?.email === 'essam77142@gmail.com') {
+          // Bootstrap services
+          DEFAULT_SERVICES.forEach(async (srv) => {
+            try {
+              await setDoc(doc(db, 'services', srv.id), srv);
+            } catch (e) {
+              console.error("Error bootstrapping service:", e);
+            }
+          });
+        } else {
+          // Set to default services on the client side if db is unbooted and subscriber is not admin
+          setServices(DEFAULT_SERVICES);
+        }
       } else {
         const loadedServices: Service[] = [];
         snapshot.forEach((doc) => {
@@ -835,10 +843,95 @@ export default function App() {
         setServices(loadedServices);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'services');
+      console.warn("Failed to subscribe to services, falling back to local defaults:", error);
+      setServices(DEFAULT_SERVICES);
     });
 
-    // 2. Bookings Sync
+    // 4. Job Vacancies Sync (Public)
+    const unsubscribeJobs = onSnapshot(collection(db, 'job_vacancies'), (snapshot) => {
+      const initialJobs: JobVacancy[] = [
+        {
+          id: 'job-1',
+          title: 'معقب معاملات حكومية محترف',
+          department: 'قسم العلاقات العامة والتعقيب',
+          location: 'الرياض - الملز',
+          type: 'دوام كامل',
+          salary: '6,000 - 8,500 ريال',
+          description: 'نبحث عن معقب معاملات ذو خبرة واسعة في مراجعة الدوائر الحكومية والوزارات الإلكترونية مثل بلدي، قوى، التأمينات الاجتماعية، والجوازات بصورة احترافية وسريعة.',
+          requirements: [
+            'خبرة لا تقل عن 3 سنوات في مجال التعقيب بالمملكة والتعامل مع الجهات الرسمية.',
+            'رخصة قيادة سارية المفعول ووجود وسيلة نقل خاصة لتخليص المعاملات.',
+            'إلمام تام باستخدام جميع المنصات والخدمات الحكومية الإلكترونية.'
+          ],
+          date: '2026-05-18T10:00:00.000Z'
+        },
+        {
+          id: 'job-2',
+          title: 'أخصائي خدمة عملاء ومبيعات هاتفية',
+          department: 'قسم المبيعات والدعم الفني',
+          location: 'الرياض (طريق الملك فهد)',
+          type: 'دوام كامل',
+          salary: '4,500 - 6,000 ريال',
+          description: 'استقبل استفسارات العملاء واقتراح الخدمات الإجرائية المناسبة لهم ومتابعة المعاملات مع فريق التعقيب عبر بوابة سما المملكة الإلكترونية بصورة ودية وعملية.',
+          requirements: [
+            'مهارات اتصال واستماع متميزة والقدرة على الإقناع بصورة ودية ولطيفة.',
+            'القدرة على استخدام برمجيات الحاسب الآلي وتطبيقات إدخال السجلات.',
+            'مؤهل ثانوي أو دبلوم كحد أدنى ولغة عربية سليمة ونظيفة.'
+          ],
+          date: '2026-05-19T14:30:00.000Z'
+        }
+      ];
+
+      if (snapshot.empty) {
+        if (auth.currentUser?.email === 'essam77142@gmail.com') {
+          // Bootstrap jobs
+          initialJobs.forEach(async (job) => {
+            try {
+              await setDoc(doc(db, 'job_vacancies', job.id), job);
+            } catch (e) {
+              console.error("Error bootstrapping job:", e);
+            }
+          });
+        } else {
+          // Set fallback local vacancies if db is empty and subscriber is not admin
+          setJobVacancies(initialJobs);
+        }
+      } else {
+        const loadedJobs: JobVacancy[] = [];
+        snapshot.forEach((doc) => {
+          loadedJobs.push(doc.data() as JobVacancy);
+        });
+        setJobVacancies(loadedJobs);
+      }
+    }, (error) => {
+      console.warn("Failed to subscribe to job vacancies, falling back to local defaults:", error);
+    });
+
+    // Listen to Auth State
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        if (user.email === 'essam77142@gmail.com') {
+          setIsAdminAuthenticated(true);
+        }
+      } else {
+        // If they had logged state but no firebase session, optionally preserve passcode modal login, 
+        // but we let Firestore auth keep the single source of truth for DB reads/writes
+      }
+    });
+
+    return () => {
+      clearTimeout(timer);
+      unsubscribeServices();
+      unsubscribeJobs();
+      unsubscribeAuth();
+    };
+  }, []);
+
+  // 2. Dynamic Private Subscriptions (Admin collections)
+  useEffect(() => {
+    if (!isAdminAuthenticated) return;
+
+    // 2.1 Bookings Sync (Admin only)
     const unsubscribeBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
       if (snapshot.empty) {
         // Bootstrap bookings
@@ -861,7 +954,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'bookings');
     });
 
-    // 3. Transactions Sync
+    // 2.2 Transactions Sync (Admin only)
     const unsubscribeTransactions = onSnapshot(collection(db, 'transactions'), (snapshot) => {
       if (snapshot.empty) {
         // Bootstrap transactions
@@ -884,61 +977,7 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'transactions');
     });
 
-    // 4. Job Vacancies Sync
-    const unsubscribeJobs = onSnapshot(collection(db, 'job_vacancies'), (snapshot) => {
-      if (snapshot.empty) {
-        // Bootstrap jobs
-        const initialJobs: JobVacancy[] = [
-          {
-            id: 'job-1',
-            title: 'معقب معاملات حكومية محترف',
-            department: 'قسم العلاقات العامة والتعقيب',
-            location: 'الرياض - الملز',
-            type: 'دوام كامل',
-            salary: '6,000 - 8,500 ريال',
-            description: 'نبحث عن معقب معاملات ذو خبرة واسعة في مراجعة الدوائر الحكومية والوزارات الإلكترونية مثل بلدي، قوى، التأمينات الاجتماعية، والجوازات بصورة احترافية وسريعة.',
-            requirements: [
-              'خبرة لا تقل عن 3 سنوات في مجال التعقيب بالمملكة والتعامل مع الجهات الرسمية.',
-              'رخصة قيادة سارية المفعول ووجود وسيلة نقل خاصة لتخليص المعاملات.',
-              'إلمام تام باستخدام جميع المنصات والخدمات الحكومية الإلكترونية.'
-            ],
-            date: '2026-05-18T10:00:00.000Z'
-          },
-          {
-            id: 'job-2',
-            title: 'أخصائي خدمة عملاء ومبيعات هاتفية',
-            department: 'قسم المبيعات والدعم الفني',
-            location: 'الرياض (طريق الملك فهد)',
-            type: 'دوام كامل',
-            salary: '4,500 - 6,000 ريال',
-            description: 'استقبل استفسارات العملاء واقتراح الخدمات الإجرائية المناسبة لهم ومتابعة المعاملات مع فريق التعقيب عبر بوابة سما المملكة الإلكترونية بصورة ودية وعملية.',
-            requirements: [
-              'مهارات اتصال واستماع متميزة والقدرة على الإقناع بصورة ودية ولطيفة.',
-              'القدرة على استخدام برمجيات الحاسب الآلي وتطبيقات إدخال السجلات.',
-              'مؤهل ثانوي أو دبلوم كحد أدنى ولغة عربية سليمة ونظيفة.'
-            ],
-            date: '2026-05-19T14:30:00.000Z'
-          }
-        ];
-        initialJobs.forEach(async (job) => {
-          try {
-            await setDoc(doc(db, 'job_vacancies', job.id), job);
-          } catch (e) {
-            console.error("Error bootstrapping job:", e);
-          }
-        });
-      } else {
-        const loadedJobs: JobVacancy[] = [];
-        snapshot.forEach((doc) => {
-          loadedJobs.push(doc.data() as JobVacancy);
-        });
-        setJobVacancies(loadedJobs);
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'job_vacancies');
-    });
-
-    // 5. Job Applications Sync
+    // 2.3 Job Applications Sync (Admin only)
     const unsubscribeApplications = onSnapshot(collection(db, 'job_applications'), (snapshot) => {
       const loadedApp: JobApplication[] = [];
       snapshot.forEach((doc) => {
@@ -949,28 +988,12 @@ export default function App() {
       handleFirestoreError(error, OperationType.LIST, 'job_applications');
     });
 
-    // Listen to Auth State
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        if (user.email === 'essam77142@gmail.com') {
-          setIsAdminAuthenticated(true);
-        }
-      } else {
-        // If they had logged state but no firebase session, optionally preserve passcode modal login, 
-        // but we let Firestore auth keep the single source of truth for DB reads/writes
-      }
-    });
-
     return () => {
-      clearTimeout(timer);
-      unsubscribeServices();
       unsubscribeBookings();
       unsubscribeTransactions();
-      unsubscribeJobs();
       unsubscribeApplications();
-      unsubscribeAuth();
     };
-  }, []);
+  }, [isAdminAuthenticated]);
 
   useEffect(() => {
     if (bookings.length > 0 && !testConsoleBookingId) {
@@ -1108,9 +1131,16 @@ export default function App() {
   
   // Handle client PDF attachment upload
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
+    if (attachedFiles.length >= 3) {
+      alert('عذراً، يمكنك إرفاق حتى 3 ملفات PDF كحد أقصى لكل معاملة.');
+      e.target.value = '';
+      return;
+    }
+
+    const file = files[0];
     if (file.type !== 'application/pdf') {
       alert('عذراً، يرجى إرفاق مستندات بصيغة PDF فقط لضمان توافق النظام وسهولة المعالجة.');
       e.target.value = '';
@@ -1127,17 +1157,48 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (event) => {
       if (event.target?.result) {
-        setAttachedFileData(event.target.result as string);
-        setAttachedFileName(file.name);
-        
         const kb = file.size / 1024;
         const formattedSize = kb > 1024 
           ? `${(kb / 1024).toFixed(2)} MB` 
           : `${kb.toFixed(1)} KB`;
-        setAttachedFileSize(formattedSize);
+
+        const newAttachment = {
+          name: file.name,
+          data: event.target.result as string,
+          size: formattedSize
+        };
+
+        setAttachedFiles(prev => {
+          const updated = [...prev, newAttachment];
+          // For backwards compatibility and simplified state binding:
+          if (updated.length > 0) {
+            setAttachedFileName(updated[0].name);
+            setAttachedFileData(updated[0].data);
+            setAttachedFileSize(updated[0].size);
+          }
+          return updated;
+        });
       }
     };
     reader.readAsDataURL(file);
+    e.target.value = ''; // clear input so user can choose more files
+  };
+
+  // Remove a specific attachment
+  const handleRemoveAttachment = (indexToRemove: number) => {
+    setAttachedFiles(prev => {
+      const updated = prev.filter((_, idx) => idx !== indexToRemove);
+      if (updated.length > 0) {
+        setAttachedFileName(updated[0].name);
+        setAttachedFileData(updated[0].data);
+        setAttachedFileSize(updated[0].size);
+      } else {
+        setAttachedFileName('');
+        setAttachedFileData('');
+        setAttachedFileSize('');
+      }
+      return updated;
+    });
   };
   
   // Validation formulas for the customer booking form
@@ -1242,7 +1303,8 @@ export default function App() {
         date: new Date().toISOString(),
         attachedFileName: attachedFileName || undefined,
         attachedFileData: attachedFileData || undefined,
-        attachedFileSize: attachedFileSize || undefined
+        attachedFileSize: attachedFileSize || undefined,
+        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
       };
 
       // Write to Firestore!
@@ -1283,6 +1345,7 @@ export default function App() {
       setAttachedFileName('');
       setAttachedFileData('');
       setAttachedFileSize('');
+      setAttachedFiles([]);
       
       setClientNameTouched(false);
       setClientPhoneTouched(false);
@@ -1577,6 +1640,10 @@ export default function App() {
     };
 
     setJobVacancies([newJob, ...jobVacancies]);
+
+    // Save job vacancy to Firestore
+    setDoc(doc(db, 'job_vacancies', newJob.id), newJob)
+      .catch(err => handleFirestoreError(err, OperationType.CREATE, `job_vacancies/${newJob.id}`));
     
     // Toast notification
     setBookingToast({
@@ -1601,6 +1668,17 @@ export default function App() {
       setJobVacancies(jobVacancies.filter(j => j.id !== jobId));
       setJobApplications(jobApplications.filter(a => a.jobId !== jobId));
       
+      // Delete vacancy from Firestore
+      deleteDoc(doc(db, 'job_vacancies', jobId))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `job_vacancies/${jobId}`));
+
+      // Cascade delete job applications in Firestore
+      const linkedApps = jobApplications.filter(a => a.jobId === jobId);
+      linkedApps.forEach(app => {
+        deleteDoc(doc(db, 'job_applications', app.id))
+          .catch(err => handleFirestoreError(err, OperationType.DELETE, `job_applications/${app.id}`));
+      });
+
       setBookingToast({
         show: true,
         type: 'warning',
@@ -1614,6 +1692,11 @@ export default function App() {
   const handleDeleteJobApplication = (appId: string) => {
     if (window.confirm('هل أنت متأكد من حذف طلب التقدم لسيرة هذا المرشح بصفة نهائية؟')) {
       setJobApplications(jobApplications.filter(a => a.id !== appId));
+
+      // Delete from Firestore
+      deleteDoc(doc(db, 'job_applications', appId))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `job_applications/${appId}`));
+
       setBookingToast({
         show: true,
         type: 'info',
@@ -1627,7 +1710,11 @@ export default function App() {
   const handleUpdateJobApplicationStatus = (appId: string, newStatus: 'قيد المراجعة' | 'تمت المقابلة' | 'تم القبول' | 'مرفوض') => {
     setJobApplications(prev => prev.map(a => {
       if (a.id === appId) {
-        return { ...a, status: newStatus };
+        const updated = { ...a, status: newStatus };
+        // Sync application status update with Firestore
+        setDoc(doc(db, 'job_applications', appId), updated)
+          .catch(err => handleFirestoreError(err, OperationType.UPDATE, `job_applications/${appId}`));
+        return updated;
       }
       return a;
     }));
@@ -1736,6 +1823,10 @@ export default function App() {
 
     setTransactions([newTx, ...transactions]);
 
+    // Save to Firestore (only admin is authenticated to write)
+    setDoc(doc(db, 'transactions', newTx.id), newTx)
+      .catch(err => handleFirestoreError(err, OperationType.CREATE, `transactions/${newTx.id}`));
+
     // Cleanup inputs
     setTxClientName('');
     setTxNotes('');
@@ -1797,6 +1888,10 @@ export default function App() {
 
     setServices([...services, newSrv]);
 
+    // Save to Firestore (only admin can write, guaranteed because we are in administrative panel)
+    setDoc(doc(db, 'services', newSrv.id), newSrv)
+      .catch(err => handleFirestoreError(err, OperationType.CREATE, `services/${newSrv.id}`));
+
     // reset fields
     setNewSrvName('');
     setNewSrvDesc('');
@@ -1823,6 +1918,11 @@ export default function App() {
     });
 
     setServices(updated);
+
+    // Save update to Firestore
+    setDoc(doc(db, 'services', editingService.id), editingService)
+      .catch(err => handleFirestoreError(err, OperationType.UPDATE, `services/${editingService.id}`));
+
     setEditingService(null);
     alert('تم حفظ وتعديل أسعار وبنود الخدمة بنجاح!');
   };
@@ -1847,6 +1947,20 @@ export default function App() {
     });
 
     setBookings(updatedBookings);
+
+    // Save update to Firestore ONLY if the current session is authenticated as admin
+    if (isAdminAuthenticated) {
+      const updatedTargetBooking = {
+        ...paymentBookingTarget,
+        isPaid: true,
+        paymentMethod: method,
+        paymentRef: ref,
+        paymentCountry: countryName,
+        paidAmount: paymentBookingTarget.paidAmount || 0
+      };
+      setDoc(doc(db, 'bookings', paymentBookingTarget.id), updatedTargetBooking)
+        .catch(err => handleFirestoreError(err, OperationType.UPDATE, `bookings/${paymentBookingTarget.id}`));
+    }
 
     // Also update current tracked list in UI search view state to reflect paid status immediately
     const updatedTracked = trackedRequests.map(b => {
@@ -1885,6 +1999,12 @@ export default function App() {
     };
 
     setTransactions([newTx, ...transactions]);
+
+    // Save transaction to Firestore ONLY if the current session is authenticated as admin
+    if (isAdminAuthenticated) {
+      setDoc(doc(db, 'transactions', newTx.id), newTx)
+        .catch(err => handleFirestoreError(err, OperationType.CREATE, `transactions/${newTx.id}`));
+    }
 
     // Send an automated WhatsApp notification alert to confirm payment!
     const messageText = `مرحباً ${paymentBookingTarget.clientName}،\nلقد أتممت بنجاح سداد رسوم معاملتك لدى مكتب سما المملكة أونلاين.\nالخدمة: ${paymentBookingTarget.serviceName}\nبوابة الدفع: ${method}\nموقع وسفارة الدفع: ${countryName}\nالرقم المرجعي للسداد: ${ref}\nشاكرين ثقتكم بنا.`;
@@ -2063,6 +2183,68 @@ export default function App() {
         }, 7000);
       }
     }
+  };
+
+  // Manually trigger a 'reminder' WhatsApp notification for bookings in processing status for >7 days
+  const handleSendProcessingReminder = async (booking: BookingRequest) => {
+    const daysCount = Math.floor((new Date().getTime() - new Date(booking.date).getTime()) / (1000 * 60 * 60 * 24));
+    
+    const notifyMessageText = lang === 'ar'
+      ? `تنبيه ومتابعة: السلام عليكم ورحمة الله وبركاته، الأخ/الأخت ${booking.clientName} المحترم. نفيدكم علماً بأن معاملتكم رقم ${booking.id.substring(3, 9)} لطلب (${booking.serviceName}) تحت الإجراء والمتابعة المستمرة منذ ${daysCount} أيام. نحن ملتزمون بمتابعة كافة المتطلبات لدى الجهات المعنية وسنبلغكم بالانتهاء فوراً. نسعد بخدمتكم.`
+      : `Reminder: Dear ${booking.clientName}, your request for (${booking.serviceName}) (ID: #${booking.id.substring(3, 9)}) has been in active processing for ${daysCount} days. We are continuously following up on all administrative steps and will notify you immediately once completed. Thank you.`;
+
+    // Trigger temporary visual notification feedback
+    setWaToast({
+      show: true,
+      type: 'loading',
+      message: `جاري إرسال إشعار تذكير WhatsApp إلى ${booking.clientName}...`,
+      details: notifyMessageText
+    });
+
+    // Call API
+    const result = await sendPlaceholderWhatsAppAPI(booking.phoneNumber, notifyMessageText);
+
+    // Create Transmission Log
+    const newLog: WhatsAppLog = {
+      id: `wa-log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      bookingId: booking.id,
+      clientName: booking.clientName,
+      phoneNumber: booking.phoneNumber,
+      serviceName: booking.serviceName,
+      status: 'processing',
+      message: notifyMessageText,
+      sentAt: new Date().toISOString(),
+      success: result.success,
+      apiResponse: result.apiResponse
+    };
+
+    setWhatsappLogs(prev => [newLog, ...prev]);
+
+    if (result.success) {
+      setWaToast({
+        show: true,
+        type: 'success',
+        message: `تم إرسال تذكير WhatsApp بنجاح للأخ ${booking.clientName}!`,
+        details: notifyMessageText
+      });
+    } else {
+      setWaToast({
+        show: true,
+        type: 'error',
+        message: `تعذر إرسال تذكير واتساب: ${result.apiResponse}`,
+        details: notifyMessageText
+      });
+    }
+
+    // Automatically auto-close feedback toast in 7 seconds
+    setTimeout(() => {
+      setWaToast(prev => {
+        if (prev && (prev.message.includes(booking.clientName) || prev.type === 'error')) {
+          return { ...prev, show: false };
+        }
+        return prev;
+      });
+    }, 7000);
   };
 
   // Manual Trigger for WhatsApp Dynamic Testing Console
@@ -2557,6 +2739,10 @@ export default function App() {
     if (window.confirm('هل أنت متأكد من رغبتك في حذف هذا القيد المالي بشكل نهائي؟')) {
       const filtered = transactions.filter(t => t.id !== txId);
       setTransactions(filtered);
+
+      // Delete from Firestore
+      deleteDoc(doc(db, 'transactions', txId))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `transactions/${txId}`));
     }
   };
 
@@ -2576,6 +2762,11 @@ export default function App() {
     if (serviceToDeleteCheck) {
       const filtered = services.filter(s => s.id !== serviceToDeleteCheck.id);
       setServices(filtered);
+
+      // delete from Firestore
+      deleteDoc(doc(db, 'services', serviceToDeleteCheck.id))
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `services/${serviceToDeleteCheck.id}`));
+
       setServiceToDeleteCheck(null);
     }
   };
@@ -3450,50 +3641,66 @@ export default function App() {
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                         <Paperclip className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
-                        <span>{lang === 'ar' ? 'إرفاق مستندات المعاملة بصيغة PDF (اختياري - كالهوية الوطنية، السجل، أو المتطلبات):' : 'Attach supporting documents in PDF format (Optional - ID, Iqama or Visas):'}</span>
+                        <span>{lang === 'ar' ? 'إرفاق مستندات المعاملة بصيغة PDF (اختياري - حتى 3 ملفات كالهوية، السجل، أو المتطلبات):' : 'Attach supporting documents in PDF format (Optional - up to 3 files, e.g., ID, register):'}</span>
                       </label>
-                      <div className="relative border-2 border-dashed border-slate-200 hover:border-amber-500/80 rounded-lg p-5 bg-[#fafbfd] hover:bg-slate-50 transition duration-150 flex flex-col items-center justify-center cursor-pointer">
-                        <input 
-                          type="file" 
-                          id="client-pdf-upload"
-                          accept=".pdf"
-                          onChange={handleFileChange}
-                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                        />
-                        {!attachedFileName ? (
+                      
+                      {attachedFiles.length < 3 ? (
+                        <div className="relative border-2 border-dashed border-slate-200 hover:border-amber-500/80 rounded-lg p-5 bg-[#fafbfd] hover:bg-slate-50 transition duration-150 flex flex-col items-center justify-center cursor-pointer mb-3">
+                          <input 
+                            type="file" 
+                            id="client-pdf-upload"
+                            accept=".pdf"
+                            onChange={handleFileChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                          />
                           <div className="text-center space-y-1.5 select-none pointer-events-none">
                             <Upload className="w-8 h-8 text-slate-400 mx-auto" strokeWidth={1.5} />
-                            <p className="text-xs text-slate-600 font-bold">اسحب ملف الـ PDF وأفلته هنا أو انقر للتحديد من جهازك</p>
-                            <p className="text-[10px] text-slate-400">يقبل النظام ملفات بصيغة PDF فقط (بحد أقصى 4 ميجابايت)</p>
+                            <p className="text-xs text-slate-600 font-bold">
+                              {lang === 'ar' ? `اضغط هنا أو اسحب لإضافة ملف الـ PDF رقم (${attachedFiles.length + 1}/3)` : `Click here or drag to add PDF file (#${attachedFiles.length + 1}/3)`}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {lang === 'ar' ? 'البوابة تقبل ملفات بصيغة PDF فقط (بحد أقصى 4 ميجابايت للملف)' : 'Accepts PDF only (max 4MB per file)'}
+                            </p>
                           </div>
-                        ) : (
-                          <div className="w-full flex items-center justify-between bg-emerald-50 border border-emerald-200 p-2.5 rounded text-xs select-none relative z-30">
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-                              <div className="text-right">
-                                <p className="font-bold text-slate-850 line-clamp-1">{attachedFileName}</p>
-                                <p className="text-[10px] text-slate-500 font-mono">{attachedFileSize}</p>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-lg font-bold text-center mb-3">
+                          {lang === 'ar' ? '✓ تم إرفاق الحد الأقصى المسموح به من الملفات (3 ملفات PDF)' : '✓ Maximum allowed files attached (3 PDF files)'}
+                        </div>
+                      )}
+
+                      {/* List of currently attached files */}
+                      {attachedFiles.length > 0 && (
+                        <div className="space-y-2 mt-2 mb-4">
+                          <p className="text-[11px] font-black text-slate-500 text-right">
+                            {lang === 'ar' ? `المستندات المرفقة الحالية (${attachedFiles.length}/3):` : `Current attached documents (${attachedFiles.length}/3):`}
+                          </p>
+                          {attachedFiles.map((file, idx) => (
+                            <div key={idx} className="w-full flex items-center justify-between bg-slate-50 border border-slate-200 p-2.5 rounded-lg text-xs select-none relative z-30">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 font-mono">#{idx + 1}</span>
+                                <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                                <div className="text-right">
+                                  <p className="font-bold text-slate-850 line-clamp-1 max-w-[200px] sm:max-w-xs">{file.name}</p>
+                                  <p className="text-[10px] text-slate-500 font-mono">{file.size}</p>
+                                </div>
                               </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleRemoveAttachment(idx);
+                                }}
+                                className="text-slate-400 hover:text-red-600 hover:bg-red-50 p-1.5 rounded-md border border-slate-200 hover:border-red-100 transition text-[11px] font-bold relative z-40"
+                                title="إزالة الملف"
+                              >
+                                {lang === 'ar' ? '✕ حذف' : '✕ Delete'}
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setAttachedFileName('');
-                                setAttachedFileData('');
-                                setAttachedFileSize('');
-                                const rawInput = document.getElementById('client-pdf-upload') as HTMLInputElement;
-                                if (rawInput) rawInput.value = '';
-                              }}
-                              className="text-slate-400 hover:text-red-600 hover:bg-white p-1.5 rounded border border-transparent hover:border-red-100 transition font-bold relative z-40"
-                              title="إزالة المرفق"
-                            >
-                              ✕ إزالة الملف
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <button 
@@ -3662,38 +3869,83 @@ export default function App() {
                               );
                             })()}
 
-                            {b.attachedFileName && (
-                              <div className="text-xs bg-emerald-50/40 p-2 rounded border border-emerald-200 text-slate-700 flex items-center justify-between mb-4 gap-2">
-                                <div className="flex items-center gap-1.5 min-w-0">
-                                  <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                                  <span className="truncate font-bold text-slate-850 text-right" title={b.attachedFileName}>
-                                    {lang === 'ar' ? 'المستند:' : 'Attachment:'} {b.attachedFileName}
-                                  </span>
-                                  <span className="text-[10px] text-slate-500 font-mono">({b.attachedFileSize})</span>
-                                </div>
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
-                                  {b.attachedFileData && (
-                                    <a
-                                      href={b.attachedFileData}
-                                      download={b.attachedFileName}
-                                      className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
-                                      title={lang === 'ar' ? 'تنزيل المستند مباشرة' : 'Download document directly'}
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <Download className="w-3 h-3" />
-                                      <span>{lang === 'ar' ? 'تنزيل' : 'Download'}</span>
-                                    </a>
-                                  )}
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedViewBooking(b)}
-                                    className="text-[9px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2 py-1 rounded font-bold whitespace-nowrap transition-colors"
-                                    title={lang === 'ar' ? 'استعراض المستند' : 'Preview Document'}
-                                  >
-                                    {lang === 'ar' ? 'معاينة' : 'Preview'}
-                                  </button>
-                                </div>
+                            {b.attachments && b.attachments.length > 0 ? (
+                              <div className="space-y-2 mb-4 text-right" dir="rtl">
+                                <span className="text-[11px] font-black text-slate-500 block">
+                                  {lang === 'ar' ? 'المستندات المرفقة بالطلب:' : 'Attached Request Documents:'}
+                                </span>
+                                {b.attachments.map((att, attIdx) => (
+                                  <div key={attIdx} className="text-xs bg-emerald-50/40 p-2 rounded-lg border border-emerald-250 text-slate-700 flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5 min-w-0">
+                                      <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                      <span className="truncate font-bold text-slate-850 text-right" title={att.name}>
+                                        {att.name}
+                                      </span>
+                                      <span className="text-[10px] text-slate-500 font-mono">({att.size})</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                                      <a
+                                        href={att.data}
+                                        download={att.name}
+                                        className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                        title={lang === 'ar' ? 'تنزيل المستند مباشرة' : 'Download document directly'}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Download className="w-3 h-3" />
+                                        <span>{lang === 'ar' ? 'تنزيل' : 'Download'}</span>
+                                      </a>
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedViewBooking(b);
+                                          setSelectedAttachmentIndex(attIdx);
+                                        }}
+                                        className="text-[9px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2 py-1 rounded font-bold whitespace-nowrap transition-colors"
+                                        title={lang === 'ar' ? 'معاينة المستند' : 'Preview Document'}
+                                      >
+                                        {lang === 'ar' ? 'معاينة' : 'Preview'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
+                            ) : (
+                              b.attachedFileName && (
+                                <div className="text-xs bg-emerald-50/40 p-2 rounded border border-emerald-200 text-slate-700 flex items-center justify-between mb-4 gap-2">
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                    <span className="truncate font-bold text-slate-850 text-right" title={b.attachedFileName}>
+                                      {lang === 'ar' ? 'المستند:' : 'Attachment:'} {b.attachedFileName}
+                                    </span>
+                                    <span className="text-[10px] text-slate-500 font-mono">({b.attachedFileSize})</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                                    {b.attachedFileData && (
+                                      <a
+                                        href={b.attachedFileData}
+                                        download={b.attachedFileName}
+                                        className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                        title={lang === 'ar' ? 'تنزيل المستند مباشرة' : 'Download document directly'}
+                                        onClick={(e) => e.stopPropagation()}
+                                      >
+                                        <Download className="w-3 h-3" />
+                                        <span>{lang === 'ar' ? 'تنزيل' : 'Download'}</span>
+                                      </a>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedViewBooking(b);
+                                        setSelectedAttachmentIndex(0);
+                                      }}
+                                      className="text-[9px] bg-emerald-100 text-emerald-800 hover:bg-emerald-200 px-2 py-1 rounded font-bold whitespace-nowrap transition-colors"
+                                      title={lang === 'ar' ? 'استعراض المستند' : 'Preview Document'}
+                                    >
+                                      {lang === 'ar' ? 'معاينة' : 'Preview'}
+                                    </button>
+                                  </div>
+                                </div>
+                              )
                             )}
                           </div>
 
@@ -4550,31 +4802,66 @@ export default function App() {
                                       <strong>ملاحظات:</strong> {b.notes}
                                     </p>
                                   )}
-                                  {b.attachedFileName && (
-                                    <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                                      <button
-                                        type="button"
-                                        onClick={() => setSelectedViewBooking(b)}
-                                        className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded transition-colors"
-                                        title="اضغط لاستعراض أو معاينة المستند المرفق بالطلب"
-                                      >
-                                        <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                                        <span className="truncate max-w-[200px]">المرفق: {b.attachedFileName}</span>
-                                        <span className="text-[9px] text-slate-400 font-mono">({b.attachedFileSize})</span>
-                                      </button>
-                                      {b.attachedFileData && (
-                                        <a
-                                          href={b.attachedFileData}
-                                          download={b.attachedFileName}
-                                          className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
-                                          title="تنزيل المستند مباشرة"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <Download className="w-3 h-3" />
-                                          <span>تنزيل المرفق</span>
-                                        </a>
-                                      )}
+                                  {b.attachments && b.attachments.length > 0 ? (
+                                    <div className="mt-1.5 space-y-1.5 text-right font-sans">
+                                      {b.attachments.map((att, attIdx) => (
+                                        <div key={attIdx} className="flex items-center gap-1.5 flex-wrap">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedViewBooking(b);
+                                              setSelectedAttachmentIndex(attIdx);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded transition-colors"
+                                            title="اضغط لاستعراض أو معاينة هذا المستند المرفق بالطلب"
+                                          >
+                                            <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                            <span className="truncate max-w-[150px] sm:max-w-[200px]">المرفق {attIdx + 1}: {att.name}</span>
+                                            <span className="text-[9px] text-slate-400 font-mono">({att.size})</span>
+                                          </button>
+                                          <a
+                                            href={att.data}
+                                            download={att.name}
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-955 bg-amber-550 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-1.5 py-0.5 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                            title="تنزيل هذا المستند مباشرة"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            <span>تنزيل</span>
+                                          </a>
+                                        </div>
+                                      ))}
                                     </div>
+                                  ) : (
+                                    b.attachedFileName && (
+                                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setSelectedViewBooking(b);
+                                            setSelectedAttachmentIndex(0);
+                                          }}
+                                          className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded transition-colors"
+                                          title="اضغط لاستعراض أو معاينة المستند المرفق بالطلب"
+                                        >
+                                          <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                          <span className="truncate max-w-[200px]">المرفق: {b.attachedFileName}</span>
+                                          <span className="text-[9px] text-slate-400 font-mono">({b.attachedFileSize})</span>
+                                        </button>
+                                        {b.attachedFileData && (
+                                          <a
+                                            href={b.attachedFileData}
+                                            download={b.attachedFileName}
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                            title="تنزيل المستند مباشرة"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <Download className="w-3 h-3" />
+                                            <span>تنزيل المرفق</span>
+                                          </a>
+                                        )}
+                                      </div>
+                                    )
                                   )}
                                 </td>
                                 <td className="p-4">
@@ -4608,35 +4895,74 @@ export default function App() {
                                   </span>
                                 </td>
                                 <td className="p-4 text-center">
-                                  <select
-                                    value={b.status}
-                                    onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as any)}
-                                    className={`p-1.5 text-xs font-bold rounded border bg-white focus:outline-none ${
-                                      b.status === 'completed' ? 'text-emerald-800 border-emerald-300 bg-emerald-50' :
-                                      b.status === 'processing' ? 'text-blue-800 border-blue-300 bg-blue-50' :
-                                      b.status === 'cancelled' ? 'text-red-800 border-red-300 bg-red-50' :
-                                      'text-amber-850 border-amber-300 bg-amber-50'
-                                    }`}
-                                  >
-                                    <option value="pending">قيد الانتظار لمراجعة الإدارة</option>
-                                    <option value="processing">تحت الإخراج والتعقيب</option>
-                                    <option value="completed">مكتملة ومستحقة الدفع</option>
-                                    <option value="cancelled">ملغية ومسحوبة</option>
-                                  </select>
+                                  {(() => {
+                                    const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
+                                    return (
+                                      <div className="flex flex-col items-center gap-1">
+                                        <select
+                                          value={b.status}
+                                          onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as any)}
+                                          className={`p-1.5 text-xs font-bold rounded border bg-white focus:outline-none ${
+                                            b.status === 'completed' ? 'text-emerald-800 border-emerald-300 bg-emerald-50' :
+                                            b.status === 'processing' ? 'text-blue-800 border-blue-300 bg-blue-50' :
+                                            b.status === 'cancelled' ? 'text-red-800 border-red-300 bg-red-50' :
+                                            'text-amber-850 border-amber-300 bg-amber-50'
+                                          }`}
+                                        >
+                                          <option value="pending">قيد الانتظار لمراجعة الإدارة</option>
+                                          <option value="processing">تحت الإخراج والتعقيب</option>
+                                          <option value="completed">مكتملة ومستحقة الدفع</option>
+                                          <option value="cancelled">ملغية ومسحوبة</option>
+                                        </select>
+                                        {b.status === 'processing' && (
+                                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                            daysInProcessing > 7 
+                                              ? 'bg-rose-100 text-rose-800 border border-rose-250 animate-pulse' 
+                                              : 'bg-slate-105 text-slate-600'
+                                          }`}>
+                                            {daysInProcessing} {daysInProcessing === 1 ? 'يوم' : daysInProcessing === 2 ? 'يومان' : 'أيام'} قيد المعالجة
+                                          </span>
+                                        )}
+                                      </div>
+                                    );
+                                  })()}
                                 </td>
                                 <td className="p-4 text-left space-x-reverse space-x-1.5">
-                                  <button
-                                    onClick={() => handlePreFillTransactionFromBooking(b)}
-                                    className="bg-slate-950 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded font-black text-[11px] transition-colors"
-                                    title="ترحيل بيانات الطلب لإنشاء قيد مالي"
-                                  >
-                                    ترحيل لدفتر الفواتير المالية
-                                  </button>
+                                  {(() => {
+                                    const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
+                                    const isProcessingOver7Days = b.status === 'processing' && daysInProcessing > 7;
+                                    return (
+                                      <>
+                                        {isProcessingOver7Days && (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSendProcessingReminder(b)}
+                                            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 px-2.5 py-1.5 rounded font-black text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer mr-1 ml-1 shadow-sm"
+                                            title="إرسال تذكير ومتابعة للعميل فوراً عبر واتساب لتجاوز الطلب 7 أيام"
+                                          >
+                                            <Send className="w-3 h-3 text-slate-950" />
+                                            <span>إرسال تذكير (WhatsApp)</span>
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => handlePreFillTransactionFromBooking(b)}
+                                          className="bg-slate-950 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded font-black text-[11px] transition-colors"
+                                          title="ترحيل بيانات الطلب لإنشاء قيد مالي"
+                                        >
+                                          ترحيل لدفتر الفواتير المالية
+                                        </button>
+                                      </>
+                                    );
+                                  })()}
                                   <button
                                     onClick={() => {
                                       if (window.confirm('هل تريد حذف سجل الطلب هذا نهائياً من أرشيف المراجعة؟')) {
                                         const filtered = bookings.filter(item => item.id !== b.id);
                                         setBookings(filtered);
+                                        // Delete from Firestore
+                                        deleteDoc(doc(db, 'bookings', b.id))
+                                          .catch(err => handleFirestoreError(err, OperationType.DELETE, `bookings/${b.id}`));
                                       }
                                     }}
                                     className="p-1 px-1.5 text-red-600 hover:text-white hover:bg-red-600 border border-red-200 rounded transition-colors"
@@ -4841,17 +5167,35 @@ export default function App() {
                                   <div className="flex justify-center gap-1.5">
                                     <button
                                       type="button"
-                                      onClick={() => setSelectedTx(t)}
-                                      className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded text-[11px] font-bold transition flex items-center gap-1"
-                                      title="معاينة وطباعة الفاتورة"
+                                      onClick={() => {
+                                        setSelectedTx(t);
+                                        setIsInvoiceOpen(true);
+                                      }}
+                                      className="px-2 py-1 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                      title="معاينة الفاتورة"
                                     >
                                       <Eye className="w-3 h-3 text-sky-600" />
-                                      <span>فاتورة</span>
+                                      <span>عرض</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedTx(t);
+                                        setIsInvoiceOpen(true);
+                                        setTimeout(() => {
+                                          window.print();
+                                        }, 150);
+                                      }}
+                                      className="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-[11px] font-bold transition flex items-center gap-1 cursor-pointer"
+                                      title="تنزيل الفاتورة كـ PDF مباشرة"
+                                    >
+                                      <Printer className="w-3 h-3 text-emerald-600" />
+                                      <span>PDF</span>
                                     </button>
                                     <button
                                       type="button"
                                       onClick={() => handleDeleteTransaction(t.id)}
-                                      className="p-1 border border-slate-150 text-red-650 hover:bg-red-50 hover:text-red-700 rounded transition"
+                                      className="p-1 border border-slate-150 text-red-650 hover:bg-red-50 hover:text-red-700 rounded transition cursor-pointer"
                                       title="إزالة القيد"
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
@@ -7958,92 +8302,141 @@ export default function App() {
       )}
 
       {/* --- ADMIN DOCUMENT VIEWER MODAL DIALOG --- */}
-      {selectedViewBooking && selectedViewBooking.attachedFileName && selectedViewBooking.attachedFileData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
-          <div className="w-full max-w-3xl bg-white border border-slate-900 p-6 rounded-xl shadow-2xl space-y-4 font-sans">
-            <div className="flex justify-between items-center border-b border-slate-200 pb-3">
-              <div className="flex items-center gap-2.5">
-                <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
-                  <Paperclip className="w-5 h-5 text-emerald-600" />
-                </div>
-                <div>
-                  <h4 className="font-extrabold text-slate-950 text-base">بوابة استعراض الوثائق والمستندات الرسمية</h4>
-                  <p className="text-[11px] text-slate-500 mt-0.5">طلب تعقيب رقم: #{selectedViewBooking.id.substring(3, 9)} للعميل المستفيد: <strong className="text-slate-850 font-bold">{selectedViewBooking.clientName}</strong></p>
-                </div>
-              </div>
-              <button 
-                onClick={() => setSelectedViewBooking(null)} 
-                className="text-slate-400 hover:text-slate-900 text-lg font-bold p-1 hover:bg-slate-50 rounded transition"
-                title="إغلاق النافذة"
-              >
-                ✕
-              </button>
-            </div>
+      {(() => {
+        if (!selectedViewBooking) return null;
+        
+        let activeName = '';
+        let activeData = '';
+        let activeSize = '';
+        
+        if (selectedViewBooking.attachments && selectedViewBooking.attachments.length > 0) {
+          const idx = selectedAttachmentIndex < selectedViewBooking.attachments.length ? selectedAttachmentIndex : 0;
+          const currentAtt = selectedViewBooking.attachments[idx];
+          activeName = currentAtt.name;
+          activeData = currentAtt.data;
+          activeSize = currentAtt.size;
+        } else if (selectedViewBooking.attachedFileName && selectedViewBooking.attachedFileData) {
+          activeName = selectedViewBooking.attachedFileName;
+          activeData = selectedViewBooking.attachedFileData;
+          activeSize = selectedViewBooking.attachedFileSize || '';
+        } else {
+          return null; // No file attachments
+        }
 
-            <div className="space-y-4">
-              <div className="bg-[#f8fafc] border border-slate-200 rounded-lg p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
-                <div className="space-y-1">
-                  <p className="text-slate-700">
-                    <span className="text-slate-400">اسم الملف المرفوع:</span> <strong className="font-sans text-slate-900 select-all">{selectedViewBooking.attachedFileName}</strong>
-                  </p>
-                  <p className="text-slate-700">
-                    <span className="text-slate-400">حجم المستند:</span> <strong className="font-mono text-slate-800">{selectedViewBooking.attachedFileSize}</strong>
-                  </p>
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4" dir="rtl">
+            <div className="w-full max-w-3xl bg-white border border-slate-900 p-6 rounded-xl shadow-2xl space-y-4 font-sans">
+              <div className="flex justify-between items-center border-b border-slate-200 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="bg-emerald-50 p-2 rounded-lg border border-emerald-200">
+                    <Paperclip className="w-5 h-5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-slate-950 text-base">بوابة استعراض الوثائق والمستندات الرسمية</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5">طلب تعقيب رقم: #{selectedViewBooking.id.substring(3, 9)} للعميل المستفيد: <strong className="text-slate-850 font-bold">{selectedViewBooking.clientName}</strong></p>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <a
-                    href={selectedViewBooking.attachedFileData}
-                    download={selectedViewBooking.attachedFileName}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded shadow-sm text-xs flex items-center gap-1.5 transition-colors"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>تحميل المستند PDF (دقة كاملة)</span>
-                  </a>
-                </div>
-              </div>
-
-              {/* View Container Frame */}
-              <div className="bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
-                <object
-                  data={selectedViewBooking.attachedFileData}
-                  type="application/pdf"
-                  className="w-full h-[450px]"
+                <button 
+                  onClick={() => {
+                    setSelectedViewBooking(null);
+                    setSelectedAttachmentIndex(0);
+                  }} 
+                  className="text-slate-400 hover:text-slate-900 text-lg font-bold p-1 hover:bg-slate-50 rounded transition"
+                  title="إغلاق النافذة"
                 >
-                  <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 bg-white h-[450px]">
-                    <div className="bg-amber-50 p-3 rounded-full border border-amber-200">
-                      <FileText className="w-10 h-10 text-amber-600" />
-                    </div>
-                    <div className="space-y-1.5">
-                      <h5 className="font-black text-slate-900 text-sm">استعراض PDF التفاعلي غير مدعوم مباشرة في متصفحك</h5>
-                      <p className="text-xs text-slate-500 max-w-md leading-relaxed">
-                        يتعذر إظهار المستند بصيغة PDF مدمجة بسبب قيود العرض الأمنية لبيئة التصفح الحالية. يرجى الضغط على الزر الأخضر بالأعلى لتنزيله مطلعاً عليه بمرونة تامة.
-                      </p>
-                    </div>
-                    <a
-                      href={selectedViewBooking.attachedFileData}
-                      download={selectedViewBooking.attachedFileName}
-                      className="bg-slate-950 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded text-xs inline-flex items-center gap-1.5 shadow transition-colors"
+                  ✕
+                </button>
+              </div>
+
+              {/* Tabs for switching between multiple attachments if they exist */}
+              {selectedViewBooking.attachments && selectedViewBooking.attachments.length > 1 && (
+                <div className="flex flex-wrap gap-2 border-b border-slate-100 pb-2">
+                  {selectedViewBooking.attachments.map((att, attIdx) => (
+                    <button
+                      key={attIdx}
+                      type="button"
+                      onClick={() => setSelectedAttachmentIndex(attIdx)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        selectedAttachmentIndex === attIdx 
+                          ? 'bg-emerald-600 text-white shadow-xs' 
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
                     >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>تنزيل الملف {selectedViewBooking.attachedFileName}</span>
+                      مستند #{attIdx + 1}: {att.name.slice(0, 20)}{att.name.length > 20 ? '...' : ''}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="bg-[#f8fafc] border border-slate-200 rounded-lg p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                  <div className="space-y-1">
+                    <p className="text-slate-700">
+                      <span className="text-slate-400">اسم الملف المرفوع:</span> <strong className="font-sans text-slate-900 select-all">{activeName}</strong>
+                    </p>
+                    <p className="text-slate-700">
+                      <span className="text-slate-400">حجم المستند:</span> <strong className="font-mono text-slate-800">{activeSize}</strong>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <a
+                      href={activeData}
+                      download={activeName}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded shadow-sm text-xs flex items-center gap-1.5 transition-colors"
+                    >
+                      <Download className="w-4 h-4" />
+                      <span>تحميل المستند PDF (دقة كاملة)</span>
                     </a>
                   </div>
-                </object>
+                </div>
+
+                {/* View Container Frame */}
+                <div className="bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
+                  <object
+                    key={activeName} // Re-mount to load new PDF immediately
+                    data={activeData}
+                    type="application/pdf"
+                    className="w-full h-[450px]"
+                  >
+                    <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 bg-white h-[450px]">
+                      <div className="bg-amber-50 p-3 rounded-full border border-amber-200">
+                        <FileText className="w-10 h-10 text-amber-600" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <h5 className="font-black text-slate-900 text-sm">استعراض PDF التفاعلي غير مدعوم مباشرة في متصفحك</h5>
+                        <p className="text-xs text-slate-500 max-w-md leading-relaxed">
+                          يتعذر إظهار المستند بصيغة PDF مدمجة بسبب قيود العرض الأمنية لبيئة التصفح الحالية. يرجى الضغط على الزر الأخضر بالأعلى لتنزيله مطلعاً عليه بمرونة تامة.
+                        </p>
+                      </div>
+                      <a
+                        href={activeData}
+                        download={activeName}
+                        className="bg-slate-950 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded text-xs inline-flex items-center gap-1.5 shadow transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>تنزيل الملف {activeName}</span>
+                      </a>
+                    </div>
+                  </object>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedViewBooking(null);
+                    setSelectedAttachmentIndex(0);
+                  }}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2 rounded text-xs font-bold transition-colors"
+                >
+                  إغلاق مساحة المعاينة
+                </button>
               </div>
             </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setSelectedViewBooking(null)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2 rounded text-xs font-bold transition-colors"
-              >
-                إغلاق مساحة المعاينة
-              </button>
-            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* --- SERVICE DELETE CONFIRMATION DIALOG MODAL --- */}
       {serviceToDeleteCheck && (
@@ -8322,27 +8715,169 @@ export default function App() {
 
       </div> {/* Close scrollable main content container */}
 
-      {/* 🟢 Floating Action Button (WhatsApp Help Chat) */}
-      {socialWhatsapp && (
-        <a
-          href={socialWhatsapp}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 group flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-slate-950 font-black p-3.5 sm:p-4 rounded-full shadow-2xl border border-emerald-400/30 transition-all duration-300 hover:shadow-emerald-500/20 group cursor-pointer hover:-translate-y-1 select-none"
-          title="تواصل معنا عبر واتساب للمساعدة الفورية"
-          id="whatsapp-floating-action-button"
-        >
-          {/* Ripple effect/wave behind */}
-          <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-75 group-hover:animate-none"></span>
-          
-          {/* Tooltip text - sliding out on hover/focus */}
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-out whitespace-nowrap text-xs font-bold text-slate-950 pr-0 group-hover:pr-2 block leading-none select-none">
-            المساعدة الفورية (واتساب مباشر)
-          </span>
+      {/* 🟢 Floating Action Button (Dynamic Smart Dropdown Menu) */}
+      <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">
+        {/* Click-outside backdrop overlay */}
+        {isFabMenuOpen && (
+          <div 
+            className="fixed inset-0 bg-transparent z-30 cursor-default"
+            onClick={() => setIsFabMenuOpen(false)}
+          />
+        )}
 
-          <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 relative z-10" />
-        </a>
-      )}
+        {/* Floating Menu List */}
+        {isFabMenuOpen && (
+          <div 
+            className="relative z-40 bg-white border border-slate-200 rounded-2xl shadow-2xl p-3 mb-3 w-64 space-y-2 text-right"
+            dir="rtl"
+          >
+            {/* Header */}
+            <div className="px-2 py-1.5 border-b border-slate-100 mb-1.5">
+              <span className="text-xs font-black text-amber-600 tracking-wider">
+                {lang === 'ar' ? 'سما المملكة: الخدمات السريعة' : 'Sama Kingdom: Quick Actions'}
+              </span>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                {lang === 'ar' ? 'تواصل مباشر أو تتبع طلبك الآن' : 'Direct support & instantaneous tracking'}
+              </p>
+            </div>
+
+            {/* Action 1: Track requests */}
+            <button
+              onClick={() => {
+                setActiveTab('track');
+                setIsFabMenuOpen(false);
+                setTimeout(() => {
+                  const element = document.getElementById('search-phone-input');
+                  if (element) {
+                    element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    element.focus();
+                  }
+                }, 100);
+              }}
+              className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 hover:text-amber-800 hover:bg-slate-50 transition-all font-bold text-xs select-none cursor-pointer border border-transparent"
+            >
+              <div className="flex items-center gap-2">
+                <div className="bg-amber-50 p-1.5 rounded-lg border border-amber-150">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                </div>
+                <span>{lang === 'ar' ? 'تتبع حالة معاملتك' : 'Track Your Request'}</span>
+              </div>
+              <ChevronLeft className="w-3 h-3 text-slate-400" />
+            </button>
+
+            {/* Action 2: Direct phone call */}
+            {socialWhatsapp && (
+              <a
+                href={(() => {
+                  const digits = socialWhatsapp.replace(/\D/g, '');
+                  return digits ? `tel:+${digits}` : 'tel:+966500000000';
+                })()}
+                onClick={() => setIsFabMenuOpen(false)}
+                className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 hover:text-sky-800 hover:bg-slate-50 transition-all font-bold text-xs select-none cursor-pointer border border-transparent"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="bg-sky-50 p-1.5 rounded-lg border border-sky-150">
+                    <PhoneCall className="w-3.5 h-3.5 text-sky-600" />
+                  </div>
+                  <span>{lang === 'ar' ? 'اتصال هاتفي مباشر' : 'Direct Phone Call'}</span>
+                </div>
+                <ChevronLeft className="w-3 h-3 text-slate-400" />
+              </a>
+            )}
+
+            {/* Action 3: Message Whatsapp */}
+            {socialWhatsapp && (
+              <a
+                href={socialWhatsapp}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsFabMenuOpen(false)}
+                className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 hover:text-emerald-800 hover:bg-slate-50 transition-all font-bold text-xs select-none cursor-pointer border border-transparent"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="bg-emerald-50 p-1.5 rounded-lg border border-emerald-150">
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                  </div>
+                  <span>{lang === 'ar' ? 'محادثة واتساب مباشرة' : 'Direct WhatsApp Chat'}</span>
+                </div>
+                <ChevronLeft className="w-3 h-3 text-slate-400" />
+              </a>
+            )}
+
+            {/* Action 4: Whatsapp Channel */}
+            {socialWhatsappChannel && (
+              <a
+                href={socialWhatsappChannel}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsFabMenuOpen(false)}
+                className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 hover:text-purple-800 hover:bg-slate-50 transition-all font-bold text-xs select-none cursor-pointer border border-transparent"
+              >
+                <div className="flex items-center gap-2">
+                  <div className="bg-purple-50 p-1.5 rounded-lg border border-purple-150">
+                    <Send className="w-3.5 h-3.5 text-purple-600" />
+                  </div>
+                  <span>{lang === 'ar' ? 'قناة واتساب الإخبارية' : 'Official Updates Channel'}</span>
+                </div>
+                <ChevronLeft className="w-3 h-3 text-slate-400" />
+              </a>
+            )}
+
+            {/* Action 5: Submit new request */}
+            <button
+              onClick={() => {
+                setActiveTab('home');
+                setIsFabMenuOpen(false);
+                setTimeout(() => {
+                  const formElement = document.getElementById('booking-form-header') || document.querySelector('form');
+                  if (formElement) {
+                    formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }, 100);
+              }}
+              className="w-full flex items-center justify-between p-2 rounded-xl text-slate-700 hover:text-indigo-800 hover:bg-slate-50 transition-all font-bold text-xs select-none cursor-pointer border border-transparent"
+            >
+              <div className="flex items-center gap-2">
+                <div className="bg-indigo-50 p-1.5 rounded-lg border border-indigo-150">
+                  <PlusCircle className="w-3.5 h-3.5 text-indigo-600" />
+                </div>
+                <span>{lang === 'ar' ? 'حجز معاملة جديدة' : 'Book New Transaction'}</span>
+              </div>
+              <ChevronLeft className="w-3 h-3 text-slate-400" />
+            </button>
+          </div>
+        )}
+
+        {/* Main Floating Button Toggle */}
+        <button
+          onClick={() => setIsFabMenuOpen(!isFabMenuOpen)}
+          className={`relative z-45 flex items-center gap-2 active:scale-95 text-slate-950 font-black p-3.5 sm:p-4 rounded-full shadow-2xl border transition-all duration-300 hover:shadow-emerald-500/20 cursor-pointer select-none group ${
+            isFabMenuOpen 
+              ? 'bg-slate-900 border-slate-700 hover:bg-slate-800 text-amber-500 hover:text-amber-400' 
+              : 'bg-emerald-600 border-emerald-400/30 hover:bg-emerald-500 text-slate-950'
+          }`}
+          title={lang === 'ar' ? 'اضغط للوصول السريع لخدمات الدعم والتتبع' : 'Support & custom options Hub'}
+          id="custom-floating-action-button"
+        >
+          {/* Ripple effect when closed */}
+          {!isFabMenuOpen && (
+            <span className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping opacity-75 group-hover:animate-none"></span>
+          )}
+
+          {/* Label sliding out for help (closed state) */}
+          {!isFabMenuOpen && (
+            <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 ease-out whitespace-nowrap text-xs font-bold font-sans text-slate-950 pr-0 group-hover:pr-2 block leading-none select-none">
+              {lang === 'ar' ? 'دعم وتتبع المعاملات' : 'Direct Support / Tracking'}
+            </span>
+          )}
+
+          {isFabMenuOpen ? (
+            <X className="w-5 h-5 sm:w-6 sm:h-6 text-amber-500 relative z-10 transition duration-300" />
+          ) : (
+            <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-slate-950 relative z-10 transition duration-300" />
+          )}
+        </button>
+      </div>
 
     </div>
   );

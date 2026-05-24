@@ -26,6 +26,7 @@ interface BookingRequest {
   attachedFileName?: string;
   attachedFileData?: string;
   attachedFileSize?: string;
+  attachments?: { name: string; data: string; size: string }[];
   isArchived?: boolean;
   isPaid?: boolean;
   paidAmount?: number;
