@@ -2247,6 +2247,340 @@ export default function App() {
     }, 7000);
   };
 
+  // Export Job Applications list into a structured, elegant printable document / PDF
+  const handleExportJobApplicationsPDF = () => {
+    if (jobApplications.length === 0) {
+      alert(lang === 'ar' ? 'لا توجد طلبات توظيف حالية لتصديرها.' : 'There are no job applications to export.');
+      return;
+    }
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert(lang === 'ar' ? 'الرجاء السماح بالنوافذ المنبثقة لتمرير وتصدير ملف الـ PDF بنجاح.' : 'Please allow popups to successfully export the PDF file.');
+      return;
+    }
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <title>${lang === 'ar' ? 'تقرير المتقدمين للوظائف - سما المملكة' : 'Job Applications Report - Sama Al-Mamlaka'}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Tajawal', sans-serif;
+      margin: 0;
+      padding: 30px;
+      color: #1e293b;
+      background-color: #ffffff;
+      direction: rtl;
+    }
+    .header-container {
+      border-bottom: 3px double #d97706;
+      padding-bottom: 20px;
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo-title-group {
+      text-align: right;
+    }
+    .main-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: #0f172a;
+      margin: 0;
+    }
+    .sub-title {
+      font-size: 13px;
+      color: #d97706;
+      margin: 5px 0 0 0;
+      font-weight: 700;
+    }
+    .meta-card {
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 25px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 15px;
+      font-size: 11px;
+    }
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .meta-label {
+      color: #64748b;
+      font-weight: 500;
+    }
+    .meta-value {
+      font-weight: 700;
+      color: #0f172a;
+      font-size: 12px;
+    }
+    .table-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 15px;
+      border-right: 4px solid #d97706;
+      padding-right: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: right;
+      font-size: 11px;
+    }
+    th {
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 10px 12px;
+      font-weight: 700;
+      border: 1px solid #1e293b;
+    }
+    td {
+      padding: 10px 12px;
+      border: 1px solid #e2e8f0;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-size: 10px;
+      font-weight: 750;
+      text-align: center;
+      border: 1px solid;
+    }
+    .badge-review {
+      background-color: #eff6ff;
+      color: #1d4ed8;
+      border-color: #bfdbfe;
+    }
+    .badge-interview {
+      background-color: #fffbeb;
+      color: #b45309;
+      border-color: #fde68a;
+    }
+    .badge-accept {
+      background-color: #ecfdf5;
+      color: #047857;
+      border-color: #a7f3d0;
+    }
+    .badge-reject {
+      background-color: #fef2f2;
+      color: #b91c1c;
+      border-color: #fca5a5;
+    }
+    .notes-box {
+      margin-top: 5px;
+      background-color: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      color: #475569;
+    }
+    .stamp-container {
+      margin-top: 50px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+    .stamp-sig {
+      text-align: center;
+      width: 200px;
+    }
+    .stamp-sig-title {
+      font-weight: 700;
+      margin-bottom: 40px;
+    }
+    .stamp-sig-line {
+      border-top: 1px dashed #64748b;
+      padding-top: 5px;
+      color: #64748b;
+    }
+    @media print {
+      body {
+        padding: 0;
+        background-color: #ffffff;
+      }
+      .no-print {
+        display: none;
+      }
+      th {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .meta-card {
+        background-color: #f8fafc !important;
+        border-color: #e2e8f0 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .badge-review {
+        background-color: #eff6ff !important;
+        color: #1d4ed8 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .badge-interview {
+        background-color: #fffbeb !important;
+        color: #b45309 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .badge-accept {
+        background-color: #ecfdf5 !important;
+        color: #047857 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .badge-reject {
+        background-color: #fef2f2 !important;
+        color: #b91c1c !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-container">
+    <div class="logo-title-group">
+      <h1 class="main-title">${lang === 'ar' ? 'سما المملكة للتعقيب والخدمات العامة' : 'Sama Al-Mamlaka Public Relations Services'}</h1>
+      <h2 class="sub-title">${lang === 'ar' ? 'إدارة الموارد البشرية والتوظيف الداخلي' : 'Human Resources & Recruitment Dep.'}</h2>
+    </div>
+    <div style="text-align: left; font-size: 11px; color: #64748b;">
+      <div>${lang === 'ar' ? 'الرمز المرجعي:' : 'Ref ID:'} QR-JA-${Date.now().toString().substring(5)}</div>
+      <div>${lang === 'ar' ? 'مستند إلكتروني معتمد' : 'Certified Digital Record'}</div>
+    </div>
+  </div>
+
+  <h3 style="text-align: center; font-size: 16px; margin: 0 0 20px 0; color: #0f172a; font-weight: 900;">
+    ${lang === 'ar' ? 'تقرير المتقدمين وطلبات الانضمام' : 'Job Applicants & Profiles Record'}
+  </h3>
+
+  <div class="meta-card">
+    <div class="meta-item">
+      <span class="meta-label">${lang === 'ar' ? 'تاريخ الاستخراج:' : 'Export Date:'}</span>
+      <span class="meta-value">${new Date().toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">${lang === 'ar' ? 'وقت التقرير:' : 'Export Time:'}</span>
+      <span class="meta-value" style="direction: ltr; text-align: right;">${new Date().toLocaleTimeString(lang === 'ar' ? 'ar-SA' : 'en-US')}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">${lang === 'ar' ? 'إجمالي طلبات الملفات:' : 'Total App Files:'}</span>
+      <span class="meta-value">${jobApplications.length} ${lang === 'ar' ? 'طلب مسجل' : 'Registered Applications'}</span>
+    </div>
+    <div class="meta-item">
+      <span class="meta-label">${lang === 'ar' ? 'درجة السرية والحماية:' : 'Confidentiality degree:'}</span>
+      <span class="meta-value" style="color: #b91c1c;">${lang === 'ar' ? 'سري وعاجل للغاية' : 'Strictly Confidential'}</span>
+    </div>
+  </div>
+
+  <h4 class="table-title">${lang === 'ar' ? 'جدول المترشحين المفرز بقاعدة البيانات:' : 'Detailed Applicants Database Grid:'}</h4>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%;">#</th>
+        <th style="width: 25%;">${lang === 'ar' ? 'الاسم ومعلومات الاتصال' : 'Applicant Name & Info'}</th>
+        <th style="width: 20%;">${lang === 'ar' ? 'الوظيفة الشاغرة المستهدفة' : 'Target Job Position'}</th>
+        <th style="width: 28%;">${lang === 'ar' ? 'التعليم ومؤهلات الملف' : 'Qualification & Experience'}</th>
+        <th style="width: 12%; text-align: center;">${lang === 'ar' ? 'حالة الطلب' : 'Status'}</th>
+        <th style="width: 10%; text-align: center;">${lang === 'ar' ? 'تاريخ التقديم' : 'Submission Date'}</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${jobApplications.map((app, index) => {
+        const emailLine = app.applicantEmail && app.applicantEmail !== 'لا يوجد' 
+          ? `<div style="color: #475569; font-size: 10px; font-family: monospace; margin-top: 1px;">${app.applicantEmail}</div>` 
+          : '';
+        const notesLine = app.notes 
+          ? `<div class="notes-box"><strong>${lang === 'ar' ? 'ملاحظات:' : 'Notes:'}</strong> ${app.notes}</div>` 
+          : '';
+        
+        let badgeClass = 'badge-review';
+        let displayStatus = app.status || 'قيد المراجعة';
+        if (app.status === 'تمت المقابلة') badgeClass = 'badge-interview';
+        if (app.status === 'تم القبول') badgeClass = 'badge-accept';
+        if (app.status === 'مرفوض') badgeClass = 'badge-reject';
+
+        return `
+          <tr>
+            <td style="font-weight: bold; text-align: center; vertical-align: middle;">${index + 1}</td>
+            <td>
+              <div style="font-weight: 700; color: #0d1527; font-size: 11px;">${app.applicantName}</div>
+              <div style="color: #2563eb; font-weight: 700; font-family: monospace; font-size: 10px; margin-top: 2px;">${app.applicantPhone}</div>
+              ${emailLine}
+            </td>
+            <td>
+              <div style="font-weight: 700; color: #0f172a; font-size: 10.5px;">${app.jobTitle}</div>
+              <div style="color: #64748b; font-size: 9px; margin-top: 2px;">ID: #${app.id.substring(4, 9)}</div>
+            </td>
+            <td>
+              <div style="font-weight: 650; color: #1e293b; font-size: 10px;">${app.qualification || (lang === 'ar' ? 'غير محدد' : 'N/A')}</div>
+              <div style="color: #d97706; font-size: 10px; font-weight: 700; margin-top: 2.5px;">
+                ${lang === 'ar' ? `⚡ خبرة عملية: ${app.experienceYears || 0} سنة` : `⚡ Experience: ${app.experienceYears || 0} Years`}
+              </div>
+              ${notesLine}
+            </td>
+            <td style="text-align: center; vertical-align: middle;">
+              <span class="badge ${badgeClass}">${displayStatus}</span>
+            </td>
+            <td style="text-align: center; vertical-align: middle; color: #475569; font-size: 9.5px;">
+              <div>${new Date(app.date).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}</div>
+            </td>
+          </tr>
+        `;
+      }).join('')}
+    </tbody>
+  </table>
+
+  <div class="stamp-container">
+    <div class="stamp-sig">
+      <div class="stamp-sig-title">${lang === 'ar' ? 'التدقيق والفرز المبدئي' : 'Checked By Personnel'}</div>
+      <div class="stamp-sig-line">${lang === 'ar' ? 'قسم وعلاقات شؤون الموظفين' : 'Human Resources Section'}</div>
+    </div>
+    <div class="stamp-sig" style="text-align: left;">
+      <div class="stamp-sig-title">${lang === 'ar' ? 'التصديق والاعتماد التنفيذي' : 'Approved By Director'}</div>
+      <div class="stamp-sig-line">${lang === 'ar' ? 'الختم الرسمي للمكتب' : 'Official Office Seal'}</div>
+    </div>
+  </div>
+
+  <div class="no-print" style="margin-top: 45px; text-align: center; background-color: #f8fafc; padding: 16px; border-radius: 10px; border: 1.5px dashed #cbd5e1;">
+    <button onclick="window.print()" style="background-color: #d97706; color: #ffffff; border: none; padding: 11px 24px; font-size: 12.5px; font-weight: 900; border-radius: 8px; cursor: pointer; font-family: 'Tajawal', sans-serif; transition: all 0.2s;">
+      ${lang === 'ar' ? '🖨️ اضغط لطباعة أو حفظ التقرير كملف PDF' : '🖨️ Click to Print or Save as PDF'}
+    </button>
+  </div>
+</body>
+</html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 800);
+  };
+
   // Manual Trigger for WhatsApp Dynamic Testing Console
   const handleManualTestWaDispatch = async () => {
     const target = bookings.find(b => b.id === testConsoleBookingId);
@@ -7794,14 +8128,27 @@ export default function App() {
 
                     {/* Applications Received Table */}
                     <div className="bg-white p-5 rounded-xl shadow border border-slate-200 space-y-4">
-                      <div>
-                        <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5 flex-row-reverse justify-end">
-                          <span className="bg-slate-900 text-amber-500 font-mono px-2 py-0.5 rounded text-[10px] font-bold">
-                            {jobApplications.length} متقدم ومتقدمة بالبوابة
-                          </span>
-                          <span>سجلات المتقدمين وسير طلبات الانضمام</span>
-                        </h3>
-                        <p className="text-[11px] text-slate-500">قائمة الكفاءات الواردة وسيرهم الذاتية مع ميزة تعديل حالة الملف وإرسال الإخطارات الذكية للمترشحين.</p>
+                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                        <div>
+                          <h3 className="text-sm font-extrabold text-slate-900 flex items-center gap-1.5 flex-row-reverse justify-end">
+                            <span className="bg-slate-900 text-amber-500 font-mono px-2 py-0.5 rounded text-[10px] font-bold">
+                              {jobApplications.length} متقدم ومتقدمة بالبوابة
+                            </span>
+                            <span>سجلات المتقدمين وسير طلبات الانضمام</span>
+                          </h3>
+                          <p className="text-[11px] text-slate-500">قائمة الكفاءات الواردة وسيرهم الذاتية مع ميزة تعديل حالة الملف وإرسال الإخطارات الذكية للمترشحين.</p>
+                        </div>
+
+                        {jobApplications.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleExportJobApplicationsPDF}
+                            className="bg-amber-600 hover:bg-amber-500 text-slate-950 px-3.5 py-2 rounded-lg font-black text-xs transition-all flex items-center gap-1.5 cursor-pointer shadow border border-amber-500/30 select-none hover:-translate-y-0.5 active:scale-95"
+                          >
+                            <FileText className="w-4 h-4 text-slate-950" />
+                            <span>تصدير القائمة كملف PDF منظم</span>
+                          </button>
+                        )}
                       </div>
 
                       <div className="overflow-x-auto rounded-lg border border-slate-150">
