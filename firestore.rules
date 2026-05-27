@@ -50,8 +50,7 @@ service cloud.firestore {
     
     // Bookings Rules
     match /bookings/{bookingId} {
-      allow get: if true;
-      allow list: if isAdmin() || (resource.data.phoneNumber is string && resource.data.phoneNumber == request.query.limit);
+      allow read: if true;
       
       allow create: if isValidId(bookingId) && isValidBooking(incoming());
       allow update: if isValidId(bookingId) && (

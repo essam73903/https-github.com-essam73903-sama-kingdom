@@ -70,6 +70,7 @@ const COUNTRIES: CountryConfig[] = [
       { id: 'card', name: 'بطاقة ائتمانية (Visa / MasterCard)', logo: '🌐', type: 'card' },
       { id: 'applepay', name: 'Apple Pay الآمن المباشر', logo: '', type: 'wallet' },
       { id: 'stcpay', name: 'محفظة STC Pay الرقمية', logo: '📱', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (بنك الأهلي)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -216,6 +217,7 @@ export function GlobalPaymentModal({
 
   // Bank Transfer IBAN simulation
   const [bankIbanSubmitted, setBankIbanSubmitted] = useState(false);
+  const [bankTxRef, setBankTxRef] = useState('');
 
   // Success states
   const [paymentRef, setPaymentRef] = useState('');
@@ -241,6 +243,7 @@ export function GlobalPaymentModal({
       setWalletPhone('');
       setPaypalEmail('');
       setBankIbanSubmitted(false);
+      setBankTxRef('');
       setOtpError('');
       setOtpCode('');
     }
@@ -279,9 +282,9 @@ export function GlobalPaymentModal({
     }
   };
 
-  const simulatePaymentProcess = () => {
+  const simulatePaymentProcess = (customRef?: string) => {
     // Generate a unique transaction reference working globally
-    const randomRef = `PAY-SM-${selectedCountry.code}-${Math.floor(100000 + Math.random() * 900000)}`;
+    const randomRef = customRef?.trim() || `PAY-SM-${selectedCountry.code}-${Math.floor(100000 + Math.random() * 900000)}`;
     setPaymentRef(randomRef);
 
     setTimeout(() => {
@@ -714,9 +717,21 @@ export function GlobalPaymentModal({
 
               {/* BANK ACCREDITATION FORM */}
               {selectedMethod.type === 'bank' && (
-                <div className="space-y-4 font-sans text-xs text-right">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!bankTxRef.trim()) {
+                      alert('يرجى كتابة رقم مرجع الحوالة البنكية لتأكيد مطابقة الإيداع.');
+                      return;
+                    }
+                    setBankIbanSubmitted(true);
+                    setStep('processing');
+                    simulatePaymentProcess(bankTxRef.trim());
+                  }}
+                  className="space-y-4 font-sans text-xs text-right text-slate-850 animate-fade-in"
+                >
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-emerald-950 space-y-1">
-                    <h4 className="font-extrabold text-xs">معلومات الحوالة المصرفية الدولية المباشرة السريعة (SEPA / Swift)</h4>
+                    <h4 className="font-extrabold text-xs">معلومات الحوالة المصرفية لتسوية وسداد الرسوم</h4>
                     <p className="text-[10px] text-emerald-800">يمكنك تسوية وسداد الرسوم والضرائب عبر تحويل مباشر لحساب الآيبان المعقود لمكتب سما المملكة وسندخل الإيصال تلقائياً.</p>
                   </div>
 
@@ -739,22 +754,35 @@ export function GlobalPaymentModal({
                     </div>
                   </div>
 
+                  {/* Transaction Reference Input Field */}
+                  <div className="space-y-1.5 text-right font-sans">
+                    <label className="block text-slate-700 font-bold mb-1">
+                      * رقم مرجع الحوالة (Transaction Reference):
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={bankTxRef}
+                      onChange={(e) => setBankTxRef(e.target.value)}
+                      placeholder="أدخل الرقم المرجعي للحوالة الصادر من تطبيق البنك (مثال: TXN-859402)"
+                      className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-mono text-left bg-slate-50/50"
+                    />
+                    <p className="text-[10.5px] text-slate-500 leading-normal">
+                      يُرجى إدخال الرقم المرجعي للحوالة بدقة لضمان مطابقة وتأكيد إيداعك البنكي الفوري مع المعاملة لتسريع تنفيذ الطلب بالمكتب.
+                    </p>
+                  </div>
+
                   {!bankIbanSubmitted ? (
                     <button
-                      type="button"
-                      onClick={() => {
-                        setBankIbanSubmitted(true);
-                        setStep('processing');
-                        simulatePaymentProcess();
-                      }}
-                      className="w-full bg-slate-950 text-white font-black py-3 rounded-xl hover:bg-slate-850 transition-all cursor-pointer text-center"
+                      type="submit"
+                      className="w-full bg-slate-950 text-white font-black py-3 rounded-xl hover:bg-slate-850 transition-all cursor-pointer text-center text-xs flex justify-center items-center gap-1.5 shadow"
                     >
-                      لقد أتممت التحويل البنكي - ترحيل رقم المطابقة البنكي للمراجعة
+                      <span>لقد أتممت التحويل البنكي - ترحيل رقم المطابقة والتحقق الفوري</span>
                     </button>
                   ) : (
                     <span className="text-emerald-700 font-bold block text-center animate-pulse">جاري فحص الحوالة المصرفية ومطابقة إشعار البنك...</span>
                   )}
-                </div>
+                </form>
               )}
             </div>
           )}

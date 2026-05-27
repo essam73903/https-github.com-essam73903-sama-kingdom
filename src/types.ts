@@ -30,6 +30,8 @@ export interface BookingRequest {
   paymentCountry?: string;
   rating?: number; // 1 to 5 stars
   ratingComment?: string; // Optional customer feedback
+  adminComments?: string; // Staff/Admin internal comments and notes
+  lastReminderSent?: string; // Timestamp of last auto-scheduled WhatsApp reminder
 }
 
 export interface Transaction {
@@ -213,6 +215,8 @@ export interface JobVacancy {
   description: string;
   requirements: string[];
   date: string;
+  images?: string[];
+  videos?: string[];
 }
 
 export interface JobApplication {

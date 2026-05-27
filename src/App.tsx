@@ -558,6 +558,10 @@ export default function App() {
   const [newJobSalary, setNewJobSalary] = useState('');
   const [newJobDescription, setNewJobDescription] = useState('');
   const [newJobRequirements, setNewJobRequirements] = useState('');
+  const [newJobImages, setNewJobImages] = useState('');
+  const [newJobVideos, setNewJobVideos] = useState('');
+  const [syncToWhatsapp, setSyncToWhatsapp] = useState(true);
+  const [syncToFacebook, setSyncToFacebook] = useState(true);
   const [jobFilterType, setJobFilterType] = useState<string>('all');
 
   // Job Applicant notification states
@@ -607,6 +611,8 @@ export default function App() {
   // Selected Transaction for printable Invoice view
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
+  const [selectedExportMonth, setSelectedExportMonth] = useState<string>('2026-05');
+  const [selectedExportClient, setSelectedExportClient] = useState<string>('');
 
   // Global International Online Payment Modal States
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -617,6 +623,11 @@ export default function App() {
   const [paymentGatewayPaypalEmail, setPaymentGatewayPaypalEmail] = useState(() => localStorage.getItem('sm_paypal_email') || 'accounting@sama-kingdom.com');
   const [paymentGatewayMadaActive, setPaymentGatewayMadaActive] = useState(() => localStorage.getItem('sm_mada_active') !== 'false');
   const [paymentGatewayFawryActive, setPaymentGatewayFawryActive] = useState(() => localStorage.getItem('sm_fawry_active') !== 'false');
+  const [showUSDPrice, setShowUSDPrice] = useState<boolean>(() => localStorage.getItem('sm_show_usd') === 'true');
+
+  const convertSARtoUSD = (sarAmount: number) => {
+    return (sarAmount / 3.75).toFixed(2);
+  };
 
   // Admin Inner-Tab: 'ledger' | 'requests' | 'services' | 'stats' | 'whatsapp' | 'jobs'
   const [adminTab, setAdminTab] = useState<'stats' | 'requests' | 'ledger' | 'services' | 'whatsapp' | 'jobs'>('stats');
@@ -703,6 +714,9 @@ export default function App() {
   const [whatsappLogs, setWhatsappLogs] = useState<WhatsAppLog[]>(() => {
     const saved = localStorage.getItem('sm_wa_logs');
     return saved ? JSON.parse(saved) : [];
+  });
+  const [autoReminderEnabled, setAutoReminderEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('sm_auto_reminder_enabled') !== 'false';
   });
   const [waToast, setWaToast] = useState<{ show: boolean; type: 'loading' | 'success' | 'error'; message: string; details: string } | null>(null);
   const [saveSuccessWaTemplate, setSaveSuccessWaTemplate] = useState(false);
@@ -813,6 +827,114 @@ export default function App() {
     }
   };
 
+  // Automatic Scheduling System for sending WhatsApp reminders for Processing Bookings (> 7 days)
+  const runAutoProcessingReminders = async (manual = false) => {
+    if (!autoReminderEnabled && !manual) return;
+    
+    let dispatchedCount = 0;
+    const nowTimestamp = new Date().getTime();
+    const updatedBookings = [...bookings];
+    
+    for (let i = 0; i < updatedBookings.length; i++) {
+      const b = updatedBookings[i];
+      
+      if (b.status === 'processing' && !b.isArchived) {
+        const createdDate = new Date(b.date);
+        const daysInProcessing = Math.floor((nowTimestamp - createdDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        if (daysInProcessing >= 7) {
+          // Check if last reminder was sent within last 7 days
+          let shouldSend = true;
+          if (b.lastReminderSent) {
+            const lastSentDate = new Date(b.lastReminderSent);
+            const daysSinceLastReminder = Math.floor((nowTimestamp - lastSentDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (daysSinceLastReminder < 7) {
+              shouldSend = false;
+            }
+          }
+          
+          if (shouldSend) {
+            dispatchedCount++;
+            
+            // Create Custom Follow-up message
+            const reminderMessage = lang === 'ar'
+              ? `تذكير ومتابعة تلقائية لبوابة المتابعة: السلام عليكم ورحمة الله وبركاته، الأخ/الأخت ${b.clientName} المحترم. نفيدكم علماً بأن معاملتكم رقم ${b.id.substring(3, 9)} لطلب (${b.serviceName}) لا تزال تحت الإجراء والمتابعة الإجرائية المستمرة منذ ${daysInProcessing} يوماً. نود طمأنتكم بأننا نتابع الملف بدقة مع الجهات المختصة وسنبلغكم فور اكتمالها بنجاح.`
+              : `Scheduled Reminder: Dear ${b.clientName}, your request for (${b.serviceName}) (ID: #${b.id.substring(3, 9)}) has been in processing for ${daysInProcessing} days. We are continuously following up with authorities and will notify you immediately once completed.`;
+            
+            // Call API
+            const result = await sendPlaceholderWhatsAppAPI(b.phoneNumber, reminderMessage);
+            
+            // Create Log entry
+            const newLog: WhatsAppLog = {
+              id: `wa-log-auto-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+              bookingId: b.id,
+              clientName: b.clientName,
+              phoneNumber: b.phoneNumber,
+              serviceName: b.serviceName,
+              status: 'processing',
+              message: reminderMessage,
+              sentAt: new Date().toISOString(),
+              success: result.success,
+              apiResponse: result.apiResponse
+            };
+            
+            // Update Log List
+            setWhatsappLogs(prev => [newLog, ...prev]);
+            
+            // Add reminder meta to booking
+            const updatedDoc = {
+              ...b,
+              lastReminderSent: new Date().toISOString()
+            };
+            
+            // Update Firestore
+            try {
+              await setDoc(doc(db, 'bookings', b.id), updatedDoc);
+            } catch (e) {
+              console.error("Firestore error updating reminder date:", e);
+            }
+            
+            // Update local array item
+            updatedBookings[i] = updatedDoc;
+          }
+        }
+      }
+    }
+    
+    if (dispatchedCount > 0) {
+      setBookings(updatedBookings);
+      if (manual) {
+        alert(`تم بنجاح تشغيل الجدولة وفحص السجلات: تم رصد وإرسال ${dispatchedCount} رسالة تذكيرية مجدولة تلقائياً بالنجاح لجميع العملاء المستحقين.`);
+      } else {
+        setWaToast({
+          show: true,
+          type: 'success',
+          message: lang === 'ar' 
+            ? `الجدولة التلقائية للتعقيب: تم بث وتوثيق عدد (${dispatchedCount}) رسائل تذكير تلقائية بالنجاح للطلبات المتأخرة لأكثر من ٧ أيام.`
+            : `Auto-Scheduling: Successfully dispatched (${dispatchedCount}) scheduled follow-up reminder(s) for requests delayed more than 7 days.`,
+          details: `تم ترحيل وبث الإشعارات وتحديث سجلات الواتساب وملف المعاملات بنجاح.`
+        });
+        setTimeout(() => setWaToast(null), 8000);
+      }
+    } else {
+      if (manual) {
+        alert('فحص الجدولة التلقائية: لم يتم العثور على أي معاملة Processing مستحقة للتذكير (التي تجاوزت ٧ أيام بالمعالجة ولم تتلقَ تذكير في آخر ٧ أيام).');
+      }
+    }
+  };
+
+  // Automated scheduling scan loop on startup when bookings load
+  const [hasScannedReminders, setHasScannedReminders] = useState(false);
+  useEffect(() => {
+    if (bookings.length > 0 && !hasScannedReminders) {
+      setHasScannedReminders(true);
+      const timer = setTimeout(() => {
+        runAutoProcessingReminders(false);
+      }, 3500);
+      return () => clearTimeout(timer);
+    }
+  }, [bookings, hasScannedReminders]);
+
   // Run automatically on application load / mount
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -907,6 +1029,38 @@ export default function App() {
       console.warn("Failed to subscribe to job vacancies, falling back to local defaults:", error);
     });
 
+    // 3. Bookings Sync (Public & Real-time Tracking)
+    const unsubscribeBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
+      if (snapshot.empty) {
+        if (auth.currentUser?.email === 'essam77142@gmail.com') {
+          // Admin triggers bootstrap of initial bookings
+          INITIAL_BOOKINGS.forEach(async (b) => {
+            try {
+              await setDoc(doc(db, 'bookings', b.id), b);
+            } catch (e) {
+              console.error("Error bootstrapping booking:", e);
+            }
+          });
+        } else {
+          // Public fallback
+          setBookings(INITIAL_BOOKINGS);
+        }
+      } else {
+        const loadedBookings: BookingRequest[] = [];
+        snapshot.forEach((doc) => {
+          loadedBookings.push(doc.data() as BookingRequest);
+        });
+        loadedBookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setBookings(loadedBookings);
+        // Sync to local storage for offline tracking resilience
+        localStorage.setItem('sm_bookings', JSON.stringify(loadedBookings));
+      }
+    }, (error) => {
+      console.warn("Failed to subscribe to bookings, falling back to local storage:", error);
+      const saved = localStorage.getItem('sm_bookings');
+      setBookings(saved ? JSON.parse(saved) : INITIAL_BOOKINGS);
+    });
+
     // Listen to Auth State
     const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -923,6 +1077,7 @@ export default function App() {
       clearTimeout(timer);
       unsubscribeServices();
       unsubscribeJobs();
+      unsubscribeBookings();
       unsubscribeAuth();
     };
   }, []);
@@ -930,29 +1085,6 @@ export default function App() {
   // 2. Dynamic Private Subscriptions (Admin collections)
   useEffect(() => {
     if (!isAdminAuthenticated) return;
-
-    // 2.1 Bookings Sync (Admin only)
-    const unsubscribeBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
-      if (snapshot.empty) {
-        // Bootstrap bookings
-        INITIAL_BOOKINGS.forEach(async (b) => {
-          try {
-            await setDoc(doc(db, 'bookings', b.id), b);
-          } catch (e) {
-            console.error("Error bootstrapping booking:", e);
-          }
-        });
-      } else {
-        const loadedBookings: BookingRequest[] = [];
-        snapshot.forEach((doc) => {
-          loadedBookings.push(doc.data() as BookingRequest);
-        });
-        loadedBookings.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setBookings(loadedBookings);
-      }
-    }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'bookings');
-    });
 
     // 2.2 Transactions Sync (Admin only)
     const unsubscribeTransactions = onSnapshot(collection(db, 'transactions'), (snapshot) => {
@@ -989,7 +1121,6 @@ export default function App() {
     });
 
     return () => {
-      unsubscribeBookings();
       unsubscribeTransactions();
       unsubscribeApplications();
     };
@@ -1536,7 +1667,49 @@ export default function App() {
       ];
     }
 
-    return { title, department, location, type, salary, description, requirements };
+    // Extract Image and Video URLs from text
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = postText.match(urlRegex) || [];
+    const images: string[] = [];
+    const videos: string[] = [];
+
+    urls.forEach(url => {
+      const cleanUrl = url.replace(/[()]/g, '').trim();
+      if (
+        cleanUrl.match(/\.(jpeg|jpg|gif|png|webp)/i) || 
+        cleanUrl.includes('unsplash.com') || 
+        cleanUrl.includes('images.unsplash.com')
+      ) {
+        images.push(cleanUrl);
+      } else if (
+        cleanUrl.match(/\.(mp4|3gp|ogg|wmv|webm|mov|avi)/i) || 
+        cleanUrl.includes('mixkit.co') || 
+        cleanUrl.includes('video')
+      ) {
+        videos.push(cleanUrl);
+      } else {
+        // Fallback guess based on surrounding context
+        if (postText.includes('صورة') || postText.includes('تصميم للأعلان')) {
+          images.push(cleanUrl);
+        } else if (postText.includes('فيديو') || postText.includes('مرئي')) {
+          videos.push(cleanUrl);
+        } else {
+          images.push(cleanUrl); // default fallback
+        }
+      }
+    });
+
+    return { 
+      title, 
+      department, 
+      location, 
+      type, 
+      salary, 
+      description, 
+      requirements,
+      images: images.length > 0 ? images : undefined,
+      videos: videos.length > 0 ? videos : undefined
+    };
   };
 
   const handleSocialImport = (e: React.FormEvent) => {
@@ -1572,11 +1745,17 @@ export default function App() {
         requirements: parsed.requirements && parsed.requirements.length > 0 
           ? parsed.requirements 
           : ['امتلاك خبرة ومؤهلات مناسبة تتوافق مع مسمى الوظيفة المعلن عنها.'],
-        date: new Date().toISOString()
+        date: new Date().toISOString(),
+        images: parsed.images || [],
+        videos: parsed.videos || []
       };
 
       // Direct state update for immediate rendering in both visitor and admin boards
       setJobVacancies(prevVacancies => [newJobPost, ...prevVacancies]);
+
+      // Save job vacancy to Firestore
+      setDoc(doc(db, 'job_vacancies', newJobPost.id), newJobPost)
+        .catch(err => handleFirestoreError(err, OperationType.CREATE, `job_vacancies/${newJobPost.id}`));
 
       setIsSocialSyncing(false);
       setSocialSyncCompleted(true);
@@ -1627,6 +1806,16 @@ export default function App() {
       .map(r => r.trim())
       .filter(r => r.length > 0);
 
+    const imagesArray = newJobImages
+      .split(/[\n,]+/)
+      .map(img => img.trim())
+      .filter(img => img.length > 0);
+
+    const videosArray = newJobVideos
+      .split(/[\n,]+/)
+      .map(vid => vid.trim())
+      .filter(vid => vid.length > 0);
+
     const newJob: JobVacancy = {
       id: `job-${Date.now()}`,
       title: newJobTitle.trim(),
@@ -1636,7 +1825,9 @@ export default function App() {
       salary: newJobSalary.trim() || 'يُحدد بعد المقابلة الشخصية',
       description: newJobDescription.trim() || 'لم يتم إدخال وصف تفصيلي للوظيفة حتى الآن.',
       requirements: reqsArray.length > 0 ? reqsArray : ['وجود مؤهل علمي معتمد ومناسب لمسمى التقديم.'],
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
+      images: imagesArray,
+      videos: videosArray
     };
 
     setJobVacancies([newJob, ...jobVacancies]);
@@ -1645,12 +1836,39 @@ export default function App() {
     setDoc(doc(db, 'job_vacancies', newJob.id), newJob)
       .catch(err => handleFirestoreError(err, OperationType.CREATE, `job_vacancies/${newJob.id}`));
     
+    // Reverse synchronization logic and simulation logging
+    let syncMessage = `تم تفعيل وتعميم إعلان وظيفة (${newJob.title}) وسيتمكن زوار المنصة والمتقدمون من تصفحها وإرسال طلباتهم.`;
+    const newLogs: { time: string; event: string; status: string; title: string }[] = [];
+
+    if (syncToWhatsapp) {
+      newLogs.push({
+        time: 'الآن',
+        event: `نشر عكسي تلقائي: تم تمرير إعلان وظيفة (${newJob.title}) بنجاح إلى قناة واتساب الرسمية مع المرفقات والوسائط.`,
+        status: 'مكتمل',
+        title: 'واتساب 💬'
+      });
+    }
+
+    if (syncToFacebook) {
+      newLogs.push({
+        time: 'الآن',
+        event: `نشر عكسي تلقائي: تم تمرير إعلان وظيفة (${newJob.title}) بنجاح ونشره على صفحة الفيس بوك مع الروابط التوضيحية.`,
+        status: 'مكتمل',
+        title: 'فيسبوك 👤'
+      });
+    }
+
+    if (newLogs.length > 0) {
+      setWebhookLogs(prev => [...newLogs, ...prev]);
+      syncMessage += ` كما تم النشر والمزامنة العكسية التلقائية بنجاح في ${syncToWhatsapp && syncToFacebook ? 'قناة الواتساب وصفحة الفيسبوك' : syncToWhatsapp ? 'قناة الواتساب' : 'صفحة الفيسبوك'} لتصل المشتركين مباشرة!`;
+    }
+
     // Toast notification
     setBookingToast({
       show: true,
       type: 'success',
-      title: 'تم نشر إعلان الوظيفة الشاغرة بنجاح!',
-      message: `تم تفعيل وتعميم إعلان وظيفة (${newJob.title}) وسيتمكن زوار المنصة والمتقدمون من تصفحها وإرسال طلباتهم.`
+      title: 'تم نشر إعلان الوظيفة الشاغرة ومزامنة القنوات بنجاح! 🚀',
+      message: syncMessage
     });
 
     // Reset Job Creation fields
@@ -1660,6 +1878,8 @@ export default function App() {
     setNewJobSalary('');
     setNewJobDescription('');
     setNewJobRequirements('');
+    setNewJobImages('');
+    setNewJobVideos('');
   };
 
   // Delete Job Vacancy (Admin)
@@ -2082,6 +2302,36 @@ export default function App() {
     setTimeout(() => {
       setBookingToast(null);
     }, 5500);
+  };
+
+  // Staff/Admin update internal review comments on client transactions
+  const handleUpdateAdminComments = (bookingId: string, comments: string) => {
+    const updatedBookings = bookings.map(b => {
+      if (b.id === bookingId) {
+        return { ...b, adminComments: comments };
+      }
+      return b;
+    });
+    setBookings(updatedBookings);
+
+    const targetBooking = bookings.find(b => b.id === bookingId);
+    if (targetBooking) {
+      const updatedDoc = {
+        ...targetBooking,
+        adminComments: comments
+      };
+      setDoc(doc(db, 'bookings', bookingId), updatedDoc)
+        .catch(err => handleFirestoreError(err, OperationType.UPDATE, `bookings/${bookingId}`));
+    }
+
+    // Also update trackedRequests if shown
+    const updatedTracked = trackedRequests.map(b => {
+      if (b.id === bookingId) {
+        return { ...b, adminComments: comments };
+      }
+      return b;
+    });
+    setTrackedRequests(updatedTracked);
   };
 
   // Admin Request status updates with automatic WhatsApp notifications
@@ -3068,6 +3318,948 @@ export default function App() {
     }, 6000);
   };
 
+  // Export all invoices of a specific month together as a compiled multi-page printable PDF
+  const handleExportMonthlyInvoicesPDF = (monthStr: string) => {
+    const monthlyTransactions = transactions.filter(t => t.date && t.date.substring(0, 7) === monthStr);
+
+    if (monthlyTransactions.length === 0) {
+      setBookingToast({
+        show: true,
+        type: 'error',
+        title: 'لا توجد بيانات لهذا الشهر',
+        message: 'لا توجد أي فواتير أو معاملات مسجلة في هذا الشهر بأسطوانة الحسابات الضريبية لتصديرها.'
+      });
+      return;
+    }
+
+    // Sort transactions by date (oldest to newest) to print in clean chronological order
+    const sortedTx = [...monthlyTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate sum metrics
+    const totalGov = sortedTx.reduce((acc, t) => acc + t.govFee, 0);
+    const totalOffice = sortedTx.reduce((acc, t) => acc + t.officeFee, 0);
+    const totalTax = sortedTx.reduce((acc, t) => acc + t.tax, 0);
+    const totalSum = sortedTx.reduce((acc, t) => acc + t.total, 0);
+
+    const year = monthStr.split('-')[0];
+    const month = monthStr.split('-')[1];
+    const arabicMonths: Record<string, string> = {
+      '01': 'يناير', '02': 'فبراير', '03': 'مارس', '04': 'أبريل',
+      '05': 'مايو', '06': 'يونيو', '07': 'يوليو', '08': 'أغسطس',
+      '09': 'سبتمبر', '10': 'أكتوبر', '11': 'نوفمبر', '12': 'ديسمبر'
+    };
+    const monthName = arabicMonths[month] || month;
+    const arabicMonthTitle = `${monthName} ${year}`;
+
+    const reportStyles = `
+      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap');
+      
+      body, html {
+        font-family: 'Cairo', 'Tajawal', sans-serif;
+        direction: rtl;
+        text-align: right;
+        color: #1e293b;
+        background-color: #ffffff;
+        margin: 0;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      
+      /* Multi-page break style */
+      .page {
+        padding: 2.5cm;
+        box-sizing: border-box;
+        position: relative;
+        min-height: 100vh;
+      }
+      
+      .page-break {
+        page-break-after: always;
+        break-after: page;
+      }
+      
+      @media print {
+        body, html {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .page {
+          padding: 1.5cm !important;
+          width: 100% !important;
+          min-height: 100vh !important;
+          height: auto !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          border: none !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+
+      .brand-title {
+        font-size: 22px;
+        font-weight: 900;
+        color: #0c1a30;
+        margin: 0 0 5px 0;
+      }
+      
+      .brand-subtitle {
+        font-size: 11px;
+        color: #64748b;
+        margin: 0;
+        font-weight: 600;
+      }
+      
+      .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 11px;
+      }
+      
+      .invoice-table th {
+        background-color: #0f172a;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 10px 12px;
+        text-align: right;
+        border: 1px solid #1e293b;
+      }
+      
+      .invoice-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        border-left: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        color: #334155;
+      }
+
+      .total-row {
+        background-color: #f1f5f9;
+        font-weight: bold;
+      }
+
+      .seal-box {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 2px dashed #b45309;
+        color: #b45309;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 8px;
+        font-weight: 800;
+        transform: rotate(-10deg);
+        opacity: 0.85;
+        line-height: 1.3;
+      }
+    `;
+
+    const coverHtml = `
+      <div class="page page-break" style="page-break-after: always; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <!-- Cover Header -->
+          <div style="display: flex; justify-content: space-between; border-bottom: 3px double #cbd5e1; padding-bottom: 25px; margin-bottom: 50px;">
+            <div>
+              <h1 style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 0 0 5px 0;">مكتب سما المملكة للخدمات والتعقيب</h1>
+              <p style="color: #64748b; font-size: 11.5px; margin: 0; font-weight: bold;">التقرير الضريبي الموحد ومجموعة الفواتير المجمعة لقيد الحسابات</p>
+            </div>
+            <div style="text-align: left; font-size: 11px; color: #475569; line-height: 1.6; font-family: monospace;">
+              <div>تاريخ التقرير المجمع: <strong>${new Date().toLocaleDateString('ar-SA')}</strong></div>
+              <div>المسؤول المالي: <strong>إدارة المراجعة العامة</strong></div>
+              <div>رقم الحفظ المرجعي: <strong>SM-BATCH-${monthStr.replace('-', '')}</strong></div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 45px;">
+            <div style="background-color: #0f172a; color: #ffffff; padding: 15px 35px; border-radius: 9999px; display: inline-block;">
+              <h2 style="font-size: 18px; font-weight: 900; margin: 0;">
+                الحزمة الشاملة للفواتير والترصيد المالي لشهر: ${arabicMonthTitle}م
+              </h2>
+            </div>
+            <p style="font-size: 11.5px; color: #64748b; margin-top: 15px; font-weight: 500;">
+              يحتوي هذا الملف المدمج على كشف التحليلات التفصيلي العام متبوعاً بكافة الفواتير الفردية المبسطة المصدرة للمستفيدين خلال هذا الشهر.
+            </p>
+          </div>
+
+          <!-- Ledger Analysis Dashboard Cards -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;">
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">عدد القيود المصدرة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${sortedTx.length} فواتير</div>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">الرسوم الحكومية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalGov.toFixed(2)} ر.س</div>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">أتعاب المكتب الإجمالية</div>
+              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalOffice.toFixed(2)} ر.س</div>
+            </div>
+            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 15px; text-align: center; border: 1.5px solid #fnd5c1;">
+              <div style="font-size: 10px; color: #b45309; font-weight: bold; margin-bottom: 5px;">التحصيل الشامل مع الضريبة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #b45309; font-family: monospace;">${totalSum.toFixed(2)} ر.س</div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 13px; font-weight: 800; color: #020617; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 5px;">فهرس وجدول القيود التفصيلي للحزمة المجمعة</h3>
+          <table class="invoice-table" style="margin-top: 10px; font-size: 10px;">
+            <thead>
+              <tr style="background-color: #0f172a; color: #ffffff;">
+                <th style="padding: 8px 10px;">رقم الفاتورة</th>
+                <th style="padding: 8px 10px;">العميل / المستفيد</th>
+                <th style="padding: 8px 10px;">الخدمة المعمدة</th>
+                <th style="padding: 8px 10px; text-align: left;">رسوم حكومية</th>
+                <th style="padding: 8px 10px; text-align: left;">أتعاب المكتب</th>
+                <th style="padding: 8px 10px; text-align: left;">ضريبة 15%</th>
+                <th style="padding: 8px 10px; text-align: left;">المجموع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedTx.map(t => `
+                <tr>
+                  <td style="font-weight: bold; font-family: monospace;">${t.invoiceNumber}</td>
+                  <td style="font-weight: bold;">${t.clientName}</td>
+                  <td>${t.serviceName}</td>
+                  <td style="text-align: left; font-family: monospace;">${t.govFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace;">${t.officeFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace;">${t.tax.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; color: #020617;">${t.total.toFixed(2)} ر.س</td>
+                </tr>
+              `).join('')}
+              <tr style="background-color: #f1f5f9; font-weight: 900; font-size: 10.5px; text-align: right; border-top: 2px solid #020617;">
+                <td colspan="3" style="text-align: center; padding: 10px;">إجمالي ملخص الميزان والترصيد للحزمة</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalGov.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalOffice.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalTax.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px; color: #b45309;">${totalSum.toFixed(2)} ر.س</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Signatures & Official Stamp of the cover page -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
+          <div style="text-align: center;">
+            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">ختم التحصيل المالي المعتمد:</div>
+            <div class="seal-box" style="margin: 0 auto;">
+              مكتب سما المملكة<br>
+              شؤون الحسابات<br>
+              معتمد ومسجل
+            </div>
+          </div>
+          <div style="text-align: left;">
+            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">توقيع واعتماد الخزانة العامة:</div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+              <svg width="100" height="30" viewBox="0 0 150 50" style="color: #1d4ed8; opacity: 0.9;">
+                <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 L 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div style="font-size: 10.5px; font-weight: bold; color: #020617; text-align: right; line-height: 1.3; margin-top: 5px;">
+                أ. عصام التركي
+                <div style="font-size: 8.5px; color: #64748b; font-weight: normal;">المدير العام والتنفيذي للتراخيص والاعتمادات</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Individual Invoices pages
+    const invoicesHtml = sortedTx.map((tx, idx) => {
+      return `
+        <div class="page ${idx < sortedTx.length - 1 ? 'page-break' : ''}" style="page-break-before: always; page-break-inside: avoid; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <!-- Decorative Gold Header Bar for printing -->
+            <div style="height: 6px; background: linear-gradient(to right, #d97706, #eab308, #b45309); margin-bottom: 25px;"></div>
+
+            <!-- Internal Header Grid -->
+            <div style="display: flex; justify-content: space-between; border-b: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px;">
+              <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <!-- SAMA Logo -->
+                <div style="background-color: #0f172a; padding: 10px; border-radius: 12px; border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center;">
+                  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 12 L20 48 L42 48 L32 82 L68 82 L58 48 L80 48 Z" fill="#f59e0b" />
+                    <circle cx="50" cy="30" r="6" fill="#ffffff" />
+                    <path d="M12 60 C32 88, 68 88, 88 60" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-size: 19px; font-weight: 900; color: #0f172a;">مكتب سما المملكة</div>
+                  <div style="color: #b45309; font-weight: bold; font-size: 11px;">للخدمات المتكاملة والتأشيرات والتعقيب الحكومي</div>
+                  <div style="font-size: 10px; color: #64748b; line-height: 1.5; font-family: monospace;">
+                    <div>الرقم الضريبي المستهدف: 300065432100003</div>
+                    <div>مكتب مرخص رقم: 84729 / ج</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="text-align: left; font-size: 10.5px; line-height: 1.6; font-family: monospace; display: flex; flex-direction: column; align-items: flex-end;">
+                <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; font-weight: bold; border-radius: 4px; font-size: 10px; color: #0f172a; margin-bottom: 8px;">
+                  فاتورة ضريبية مبسطة صادرة ومسجلة
+                </div>
+                <div>رقم الفاتورة: <strong style="color: #0f172a; font-size: 11.5px;">${tx.invoiceNumber}</strong></div>
+                <div>تاريخ الإصدار: <strong>${new Date(tx.date).toLocaleDateString('ar-SA')}</strong></div>
+              </div>
+            </div>
+
+            <!-- Client Details Box -->
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 10.5px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">بيانات العميل المستفيد والمكلف</h4>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px;">
+                <div>العميل: <strong style="color: #0f172a; font-size: 12.5px;">${tx.clientName}</strong></div>
+                <div>الخدمة المطلوبة: <strong style="color: #0f172a;">${tx.serviceName}</strong></div>
+              </div>
+            </div>
+
+            <!-- Table of Services breakdown -->
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th style="width: 60%;">وصف الخدمة والإجراء للعملية</th>
+                  <th style="width: 20%; text-align: center;">الخضوع للضريبة</th>
+                  <th style="width: 20%; text-align: left;">قيمة البند المالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong style="color: #0f172a; font-size: 11.5px;">الرسوم والمستحقات الحكومية والدولة</strong>
+                    <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">تشمل المبالغ المسددة للوزارات، ومنصة الجوازات، والجهات البلدية والاعتمادات الخارجية المباشرة المعفاة.</div>
+                  </td>
+                  <td style="text-align: center; color: #64748b; font-size: 10.5px;">معفى / صفر ضريبة</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.govFee.toFixed(2)} ر.س</td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong style="color: #0f172a; font-size: 11.5px;">أتعاب وتكاليف خدمات سما المملكة</strong>
+                    <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">أتعاب المعاملة الإدارية وتدقيق الطلبات والاستشارات وصياغة الملفات والتعقيب الميداني.</div>
+                  </td>
+                  <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 10.5px;">خاضع (15%)</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.officeFee.toFixed(2)} ر.س</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Totals Row with QR Code -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+              <div style="display: flex; gap: 12px; align-items: center; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;">
+                <!-- ZATCA QR Code SVG representation -->
+                <svg width="60" height="60" viewBox="0 0 100 100" style="color: #0f172a;">
+                  <rect x="0" y="0" width="10" height="10" fill="currentColor"/>
+                  <rect x="15" y="0" width="10" height="5" fill="currentColor"/>
+                  <rect x="0" y="15" width="10" height="10" fill="currentColor"/>
+                  <rect x="40" y="0" width="20" height="10" fill="currentColor"/>
+                  <rect x="80" y="0" width="20" height="20" fill="currentColor"/>
+                  <rect x="80" y="30" width="10" height="10" fill="currentColor"/>
+                  <rect x="0" y="80" width="20" height="20" fill="currentColor"/>
+                  <rect x="30" y="80" width="5" height="10" fill="currentColor"/>
+                  <text x="50" y="60" font-size="7" font-weight="bold" text-anchor="middle" fill="#d97706">ZATCA</text>
+                  <rect x="30" y="30" width="30" height="15" fill="currentColor" opacity="0.8"/>
+                  <rect x="65" y="65" width="30" height="30" fill="currentColor"/>
+                </svg>
+                <div style="font-size: 9.5px; color: #64748b; line-height: 1.4; max-w-xs;">
+                  <strong style="color: #1e293b; display: block;">فاتورة إلكترونية معتمدة</strong>
+                  مسجل بهيئة الزكاة والضريبة والجمارك بالمملكة.
+                </div>
+              </div>
+
+              <div style="width: 260px; font-family: monospace; font-size: 10.5px; line-height: 1.8;">
+                <div style="display: flex; justify-content: space-between; color: #64748b;">
+                  <span>أتعاب المكتب الخاضع للضريبة:</span>
+                  <span>${tx.officeFee.toFixed(2)} ر.س</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #64748b;">
+                  <span>ضريبة القيمة المضافة (15%):</span>
+                  <span>${tx.tax.toFixed(2)} ر.س</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #64748b;">
+                  <span>الرسوم والمصاريف الحكومية:</span>
+                  <span>${tx.govFee.toFixed(2)} ر.س</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #020617; border-top: 1.5px solid #020617; padding-top: 5px; margin-top: 5px; background-color: #fffbeb; padding: 4px;">
+                  <span style="font-family: inherit;">الإجمالي النهائي المستحق:</span>
+                  <span>${tx.total.toFixed(2)} ر.س</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seals & Signature column -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+            <div style="text-align: center;">
+              <div style="font-size: 8.5px; color: #64748b; font-weight: bold; margin-bottom: 5px; text-align: right;">الختم المالي المعتمد للمكتب:</div>
+              <div style="position: relative; width: 70px; height: 70px; margin: 0 auto;">
+                <svg width="65" height="65" viewBox="0 0 100 100" style="color: rgba(217, 119, 6, 0.85);">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3,1"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M 40 45 L 50 35 L 60 45 L 55 55 L 45 55 Z" fill="currentColor" opacity="0.4"/>
+                  <circle cx="50" cy="46" r="2" fill="currentColor"/>
+                  <text x="50" y="66" font-size="7.5" font-weight="900" fill="currentColor" text-anchor="middle">مُعتمد</text>
+                </svg>
+              </div>
+            </div>
+
+            <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-end;">
+              <span style="font-size: 8.5px; color: #64748b; font-weight: bold; margin-bottom: 5px;">التوقيع والاعتماد الرقمي:</span>
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <div style="height: 35px; position: relative;">
+                  <svg width="95" height="30" viewBox="0 0 150 50" style="color: rgba(29, 78, 216, 0.8);">
+                    <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 C 146 20, 102 46, 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div style="text-align: right; line-height: 1.3;">
+                  <strong style="font-size: 10px; color: #020617;">أ. عصام التركي</strong>
+                  <div style="font-size: 8.5px; color: #64748b;">المدير العام والتنفيذي للمكتب</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes section if present -->
+          ${tx.notes ? `
+            <div style="margin-top: 15px; padding: 8px; background-color: #f1f5f9; border-right: 4px solid #d97706; border-radius: 6px; font-size: 9.5px; color: #475569;">
+              <strong>ملاحظات الفاتورة الضريبية:</strong> ${tx.notes}
+            </div>
+          ` : ''}
+
+          <!-- Footer -->
+          <p style="text-align: center; font-size: 9.5px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 10px; margin-bottom: 0;">
+            تعتبر هذه الفاتورة مستند رسمي لإثبات إنهاء وتعميد المعاملات عبر مكتب سما المملكة. نشكركم لثقتكم الغالية بنا.
+          </p>
+        </div>
+      `;
+    }).join('');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>حزمة فواتير شهر ${arabicMonthTitle} - مكتب سما المملكة</title>
+        <style>${reportStyles}</style>
+      </head>
+      <body>
+        ${coverHtml}
+        ${invoicesHtml}
+      </body>
+      </html>
+    `;
+
+    // Create a hidden iframe, write HTML and print
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1500);
+      }, 500);
+    }
+
+    setBookingToast({
+      show: true,
+      type: 'success',
+      title: 'تم إصدار الفواتير المجمعة بنجاح',
+      message: `تم تجميع عدد (${sortedTx.length}) فواتير ضريبية لشهر ${arabicMonthTitle} ومزامنتها للطباعة المجمعة.`
+    });
+
+    setTimeout(() => {
+      setBookingToast(prev => prev && prev.title === 'تم إصدار الفواتير المجمعة بنجاح' ? { ...prev, show: false } : prev);
+    }, 7000);
+  };
+
+  // Export all invoices of a specific client together as a compiled multi-page printable PDF
+  const handleExportClientInvoicesPDF = (selectedClient: string) => {
+    if (!selectedClient) {
+      setBookingToast({
+        show: true,
+        type: 'error',
+        title: 'يجب اختيار عميل أولاً',
+        message: 'يرجى تحديد العميل الذي ترغب في تصدير فواتيره مجمعة.'
+      });
+      return;
+    }
+
+    const clientTransactions = transactions.filter(t => t.clientName && t.clientName.trim() === selectedClient.trim());
+
+    if (clientTransactions.length === 0) {
+      setBookingToast({
+        show: true,
+        type: 'error',
+        title: 'لا توجد بيانات لهذا العميل',
+        message: `لا توجد أي فواتير أو معاملات مسجلة للعميل "${selectedClient}" لتصديرها.`
+      });
+      return;
+    }
+
+    // Sort transactions by date (oldest to newest)
+    const sortedTx = [...clientTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    // Calculate sum metrics
+    const totalGov = sortedTx.reduce((acc, t) => acc + t.govFee, 0);
+    const totalOffice = sortedTx.reduce((acc, t) => acc + t.officeFee, 0);
+    const totalTax = sortedTx.reduce((acc, t) => acc + t.tax, 0);
+    const totalSum = sortedTx.reduce((acc, t) => acc + t.total, 0);
+
+    const reportStyles = `
+      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Tajawal:wght@400;500;700;800;900&display=swap');
+      
+      body, html {
+        font-family: 'Cairo', 'Tajawal', sans-serif;
+        direction: rtl;
+        text-align: right;
+        color: #1e293b;
+        background-color: #ffffff;
+        margin: 0;
+        padding: 0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      
+      /* Multi-page break style */
+      .page {
+        padding: 2.5cm;
+        box-sizing: border-box;
+        position: relative;
+        min-height: 100vh;
+      }
+      
+      .page-break {
+        page-break-after: always;
+        break-after: page;
+      }
+      
+      @media print {
+        body, html {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .page {
+          padding: 1.5cm !important;
+          width: 100% !important;
+          min-height: 100vh !important;
+          height: auto !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          border: none !important;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+
+      .brand-title {
+        font-size: 22px;
+        font-weight: 950;
+        color: #0c1a30;
+        margin: 0 0 5px 0;
+      }
+      
+      .brand-subtitle {
+        font-size: 11px;
+        color: #64748b;
+        margin: 0;
+        font-weight: 600;
+      }
+      
+      .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-size: 11px;
+      }
+      
+      .invoice-table th {
+        background-color: #0f172a;
+        color: #ffffff;
+        font-weight: 700;
+        padding: 10px 12px;
+        text-align: right;
+        border: 1px solid #1e293b;
+      }
+      
+      .invoice-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        border-left: 1px solid #e2e8f0;
+        border-right: 1px solid #e2e8f0;
+        color: #334155;
+      }
+
+      .total-row {
+        background-color: #f1f5f9;
+        font-weight: bold;
+      }
+
+      .seal-box {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 2px dashed #b45309;
+        color: #b45309;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 8px;
+        font-weight: 800;
+        transform: rotate(-10deg);
+        opacity: 0.85;
+        line-height: 1.3;
+      }
+    `;
+
+    const coverHtml = `
+      <div class="page page-break" style="page-break-after: always; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <!-- Cover Header -->
+          <div style="display: flex; justify-content: space-between; border-bottom: 3px double #cbd5e1; padding-bottom: 25px; margin-bottom: 50px;">
+            <div>
+              <h1 style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 0 0 5px 0;">مكتب سما المملكة للخدمات والتعقيب</h1>
+              <p style="color: #64748b; font-size: 11.5px; margin: 0; font-weight: bold;">كشف الحساب الضريبي الموحد ومجموعة الفواتير المجمعة لقيد الحسابات</p>
+            </div>
+            <div style="text-align: left; font-size: 11px; color: #475569; line-height: 1.6; font-family: monospace;">
+              <div>تاريخ التقرير المجمع: <strong>${new Date().toLocaleDateString('ar-SA')}</strong></div>
+              <div>المسؤول المالي: <strong>إدارة المراجعة العامة</strong></div>
+              <div>رقم الحفظ المرجعي: <strong>SM-CLIENT-${Date.now().toString().slice(-6)}</strong></div>
+            </div>
+          </div>
+
+          <div style="text-align: center; margin-bottom: 45px;">
+            <div style="background-color: #0f172a; color: #ffffff; padding: 15px 35px; border-radius: 9999px; display: inline-block;">
+              <h2 style="font-size: 18px; font-weight: 900; margin: 0;">
+                كشف الحساب الشامل والملف الضريبي الموحد للعميل: ${selectedClient}
+              </h2>
+            </div>
+            <p style="font-size: 11.5px; color: #64748b; margin-top: 15px; font-weight: 500;">
+              يحتوي هذا الملف المدمج على كشف التحليلات التفصيلي العام لجميع المعاملات المالية، متبوعاً بكافة الفواتير الفردية المبسطة المصدرة للمستفيد خلال فترة التعامل.
+            </p>
+          </div>
+
+          <!-- Ledger Analysis Dashboard Cards -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;">
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">عدد المعاملات والفواتير</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${sortedTx.length} فواتير</div>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">إجمالي الرسوم الحكومية المسددة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalGov.toFixed(2)} ر.س</div>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">صافي أتعاب خدمات المكتب</div>
+              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalOffice.toFixed(2)} ر.س</div>
+            </div>
+            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 15px; text-align: center; border: 1.5px solid #fbd5c1;">
+              <div style="font-size: 10px; color: #b45309; font-weight: bold; margin-bottom: 5px;">المجموع النهائي مع الضريبة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #b45309; font-family: monospace;">${totalSum.toFixed(2)} ر.س</div>
+            </div>
+          </div>
+
+          <h3 style="font-size: 13px; font-weight: 800; color: #020617; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 5px;">فهرس وجدول تفاصيل المعاملات المالية</h3>
+          <table class="invoice-table" style="margin-top: 10px; font-size: 10px;">
+            <thead>
+              <tr style="background-color: #0f172a; color: #ffffff;">
+                <th style="padding: 8px 10px; width: 15%;">رقم الفاتورة</th>
+                <th style="padding: 8px 10px; width: 20%;">تاريخ الإصدار</th>
+                <th style="padding: 8px 10px; width: 25%;">الخدمة المعمدة</th>
+                <th style="padding: 8px 10px; text-align: left; width: 10%;">رسوم حكومية</th>
+                <th style="padding: 8px 10px; text-align: left; width: 10%;">أتعاب المكتب</th>
+                <th style="padding: 8px 10px; text-align: left; width: 10%;">ضريبة 15%</th>
+                <th style="padding: 8px 10px; text-align: left; width: 10%;">المجموع</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${sortedTx.map(t => `
+                <tr>
+                  <td style="font-weight: bold; font-family: monospace;">${t.invoiceNumber}</td>
+                  <td>${new Date(t.date).toLocaleDateString('ar-SA')}</td>
+                  <td>${t.serviceName}</td>
+                  <td style="text-align: left; font-family: monospace;">${t.govFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace;">${t.officeFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace;">${t.tax.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; color: #020617;">${t.total.toFixed(2)} ر.س</td>
+                </tr>
+              `).join('')}
+              <tr style="background-color: #f1f5f9; font-weight: 900; font-size: 10.5px; text-align: right; border-top: 2px solid #020617;">
+                <td colspan="3" style="text-align: center; padding: 10px;">إجمالي ملخص الميزان والترصيد للعميل</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalGov.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalOffice.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalTax.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px; color: #b45309;">${totalSum.toFixed(2)} ر.س</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Signatures & Official Stamp of the cover page -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
+          <div style="text-align: center;">
+            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">ختم التحصيل المالي المعتمد:</div>
+            <div class="seal-box" style="margin: 0 auto;">
+              مكتب سما المملكة<br>
+              شؤون الحسابات<br>
+              معتمد ومسجل
+            </div>
+          </div>
+          <div style="text-align: left;">
+            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">توقيع واعتماد الخزانة العامة:</div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+              <svg width="100" height="30" viewBox="0 0 150 50" style="color: #1d4ed8; opacity: 0.9;">
+                <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 L 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div style="font-size: 10.5px; font-weight: bold; color: #020617; text-align: right; line-height: 1.3; margin-top: 5px;">
+                أ. عصام التركي
+                <div style="font-size: 8.5px; color: #64748b; font-weight: normal;">المدير العام والتنفيذي للتراخيص والاعتمادات</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Individual Invoices pages
+    const invoicesHtml = sortedTx.map((tx, idx) => {
+      return `
+        <div class="page ${idx < sortedTx.length - 1 ? 'page-break' : ''}" style="page-break-before: always; page-break-inside: avoid; display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <!-- Decorative Gold Header Bar for printing -->
+            <div style="height: 6px; background: linear-gradient(to right, #d97706, #eab308, #b45309); margin-bottom: 25px;"></div>
+
+            <!-- Internal Header Grid -->
+            <div style="display: flex; justify-content: space-between; border-b: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px;">
+              <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <!-- SAMA Logo -->
+                <div style="background-color: #0f172a; padding: 10px; border-radius: 12px; border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center;">
+                  <svg width="40" height="40" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M50 12 L20 48 L42 48 L32 82 L68 82 L58 48 L80 48 Z" fill="#f59e0b" />
+                    <circle cx="50" cy="30" r="6" fill="#ffffff" />
+                    <path d="M12 60 C32 88, 68 88, 88 60" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-size: 19px; font-weight: 900; color: #0f172a;">مكتب سما المملكة</div>
+                  <div style="color: #b45309; font-weight: bold; font-size: 11px;">للخدمات المتكاملة والتأشيرات والتعقيب الحكومي</div>
+                  <div style="font-size: 10px; color: #64748b; line-height: 1.5; font-family: monospace;">
+                    <div>الرقم الضريبي المستهدف: 300065432100003</div>
+                    <div>مكتب مرخص رقم: 84729 / ج</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div style="text-align: left; font-size: 10.5px; line-height: 1.6; font-family: monospace; display: flex; flex-direction: column; align-items: flex-end;">
+                <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; font-weight: bold; border-radius: 4px; font-size: 10px; color: #0f172a; margin-bottom: 8px;">
+                  فاتورة ضريبية مبسطة صادرة ومسجلة
+                </div>
+                <div>رقم الفاتورة: <strong style="color: #0f172a; font-size: 11.5px;">${tx.invoiceNumber}</strong></div>
+                <div>تاريخ الإصدار: <strong>${new Date(tx.date).toLocaleDateString('ar-SA')}</strong></div>
+              </div>
+            </div>
+
+            <!-- Client Details Box -->
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 10.5px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">بيانات العميل المستفيد والمكلف</h4>
+              <div style="display: flex; justify-content: space-between; font-size: 11.5px;">
+                <div>العميل: <strong style="color: #0f172a; font-size: 12.5px;">${tx.clientName}</strong></div>
+                <div>الخدمة المطلوبة: <strong style="color: #0f172a;">${tx.serviceName}</strong></div>
+              </div>
+            </div>
+
+            <!-- Table of Services breakdown -->
+            <table class="invoice-table">
+              <thead>
+                <tr>
+                  <th style="width: 60%;">وصف الخدمة والإجراء للعملية</th>
+                  <th style="width: 20%; text-align: center;">الخضوع للضريبة</th>
+                  <th style="width: 20%; text-align: left;">قيمة البند المالي</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <strong style="color: #0f172a; font-size: 11.5px;">الرسوم والمستحقات الحكومية والدولة</strong>
+                    <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">تشمل المبالغ المسددة للوزارات، ومنصة الجوازات، والجهات البلدية والاعتمادات الخارجية المباشرة المعفاة.</div>
+                  </td>
+                  <td style="text-align: center; color: #64748b; font-size: 10.5px;">معفى / صفر ضريبة</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.govFee.toFixed(2)} ر.س</td>
+                </tr>
+                <tr>
+                  <td>
+                    <strong style="color: #0f172a; font-size: 11.5px;">أتعاب وتكاليف خدمات سما المملكة</strong>
+                    <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">أتعاب المعاملة الإدارية وتدقيق الطلبات والاستشارات وصياغة الملفات والتعقيب الميداني.</div>
+                  </td>
+                  <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 10.5px;">خاضع (15%)</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.officeFee.toFixed(2)} ر.س</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <!-- Totals Row with QR Code -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
+              <div style="display: flex; gap: 12px; align-items: center; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;">
+                <!-- ZATCA QR Code SVG representation -->
+                <svg width="60" height="60" viewBox="0 0 100 100" style="color: #0f172a;">
+                  <rect x="0" y="0" width="10" height="10" fill="currentColor"/>
+                  <rect x="15" y="0" width="10" height="5" fill="currentColor"/>
+                  <rect x="0" y="15" width="10" height="10" fill="currentColor"/>
+                  <rect x="40" y="0" width="20" height="10" fill="currentColor"/>
+                  <rect x="80" y="0" width="20" height="20" fill="currentColor"/>
+                  <rect x="80" y="30" width="10" height="10" fill="currentColor"/>
+                  <rect x="0" y="80" width="20" height="20" fill="currentColor"/>
+                  <rect x="30" y="80" width="5" height="10" fill="currentColor"/>
+                  <text x="50" y="60" font-size="7" font-weight="bold" text-anchor="middle" fill="#d97706">ZATCA</text>
+                  <rect x="30" y="30" width="30" height="15" fill="currentColor" opacity="0.8"/>
+                  <rect x="65" y="65" width="30" height="30" fill="currentColor"/>
+                </svg>
+                <div style="font-size: 9.5px; color: #64748b; line-height: 1.4; max-w-xs;">
+                  <strong style="color: #1e293b; display: block;">فاتورة إلكترونية معتمدة</strong>
+                  مسجل بهيئة الزكاة والضريبة والجمارك بالمملكة.
+                </div>
+              </div>
+
+              <div style="width: 260px; font-family: monospace; font-size: 10.5px; line-height: 1.8;">
+                <div style="display: flex; justify-content: space-between; color: #64748b;">
+                  <span>أتعاب المكتب الخاضع للضريبة:</span>
+                  <span>${tx.officeFee.toFixed(2)} ر.س</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #64748b;">
+                  <span>ضريبة القيمة المضافة (15%):</span>
+                  <span>${tx.tax.toFixed(2)} ر.س</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; color: #64748b;">
+                  <span>الرسوم والمصاريف الحكومية:</span>
+                  <span>${tx.govFee.toFixed(2)} ر.س</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #020617; border-top: 1.5px solid #020617; padding-top: 5px; margin-top: 5px; background-color: #fffbeb; padding: 4px;">
+                  <span style="font-family: inherit;">الإجمالي النهائي المستحق:</span>
+                  <span>${tx.total.toFixed(2)} ر.س</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seals & Signature column -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; border-top: 1px dashed #e2e8f0; padding-top: 15px;">
+            <div style="text-align: center;">
+              <div style="font-size: 8.5px; color: #64748b; font-weight: bold; margin-bottom: 5px; text-align: right;">الختم المالي المعتمد للمكتب:</div>
+              <div style="position: relative; width: 70px; height: 70px; margin: 0 auto;">
+                <svg width="65" height="65" viewBox="0 0 100 100" style="color: rgba(217, 119, 6, 0.85);">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3,1"/>
+                  <circle cx="50" cy="50" r="38" fill="none" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M 40 45 L 50 35 L 60 45 L 55 55 L 45 55 Z" fill="currentColor" opacity="0.4"/>
+                  <circle cx="50" cy="46" r="2" fill="currentColor"/>
+                  <text x="50" y="66" font-size="7.5" font-weight="900" fill="currentColor" text-anchor="middle">مُعتمد</text>
+                </svg>
+              </div>
+            </div>
+
+            <div style="text-align: left; display: flex; flex-direction: column; align-items: flex-end;">
+              <span style="font-size: 8.5px; color: #64748b; font-weight: bold; margin-bottom: 5px;">التوقيع والاعتماد الرقمي:</span>
+              <div style="display: flex; flex-direction: column; align-items: center;">
+                <div style="height: 35px; position: relative;">
+                  <svg width="95" height="30" viewBox="0 0 150 50" style="color: rgba(29, 78, 216, 0.8);">
+                    <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 C 146 20, 102 46, 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+                <div style="text-align: right; line-height: 1.3;">
+                  <strong style="font-size: 10px; color: #020617;">أ. عصام التركي</strong>
+                  <div style="font-size: 8.5px; color: #64748b;">المدير العام والتنفيذي للمكتب</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes section if present -->
+          ${tx.notes ? `
+            <div style="margin-top: 15px; padding: 8px; background-color: #f1f5f9; border-right: 4px solid #d97706; border-radius: 6px; font-size: 9.5px; color: #475569;">
+              <strong>ملاحظات الفاتورة الضريبية:</strong> ${tx.notes}
+            </div>
+          ` : ''}
+
+          <!-- Footer -->
+          <p style="text-align: center; font-size: 9.5px; color: #94a3b8; margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 10px; margin-bottom: 0;">
+            تعتبر هذه الفاتورة مستند رسمي لإثبات إنهاء وتعميد المعاملات عبر مكتب سما المملكة. نشكركم لثقتكم الغالية بنا.
+          </p>
+        </div>
+      `;
+    }).join('');
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="ar" dir="rtl">
+      <head>
+        <meta charset="UTF-8">
+        <title>حقيبة فواتير العميل ${selectedClient} - مكتب سما المملكة</title>
+        <style>${reportStyles}</style>
+      </head>
+      <body>
+        ${coverHtml}
+        ${invoicesHtml}
+      </body>
+      </html>
+    `;
+
+    // Create a hidden iframe, write HTML and print
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1500);
+      }, 500);
+    }
+
+    setBookingToast({
+      show: true,
+      type: 'success',
+      title: 'تم إصدار الفواتير المجمعة للعميل',
+      message: `تم تجميع عدد (${sortedTx.length}) فواتير ضريبية للعميل "${selectedClient}" ومزامنتها للطباعة المجمعة.`
+    });
+
+    setTimeout(() => {
+      setBookingToast(prev => prev && prev.title === 'تم إصدار الفواتير المجمعة للعميل' ? { ...prev, show: false } : prev);
+    }, 7000);
+  };
+
   // Delete transaction safely
   const handleDeleteTransaction = (txId: string) => {
     if (window.confirm('هل أنت متأكد من رغبتك في حذف هذا القيد المالي بشكل نهائي؟')) {
@@ -3692,21 +4884,49 @@ export default function App() {
 
                       {/* Fee Calculator Break down */}
                       <div className="border-t border-slate-100 pt-4 space-y-1 bg-slate-50 p-3 rounded-lg text-xs font-mono">
-                        <div className="flex justify-between text-slate-500">
+                        <div className="flex justify-between text-slate-400">
                           <span>{lang === 'ar' ? 'الرسوم الحكومية للدولة:' : 'Gov Fees:'}</span>
-                          <span className="font-bold text-slate-900">{s.govFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}</span>
+                          <span className="font-bold text-slate-900 text-left">
+                            {s.govFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {showUSDPrice && (
+                              <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                                (${convertSARtoUSD(s.govFee)} USD)
+                              </span>
+                            )}
+                          </span>
                         </div>
-                        <div className="flex justify-between text-slate-500">
+                        <div className="flex justify-between text-slate-400">
                           <span>{lang === 'ar' ? 'أتعاب سما المملكة:' : 'Sama Al-Mamlaka Fee:'}</span>
-                          <span className="font-bold text-slate-900">{s.officeFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}</span>
+                          <span className="font-bold text-slate-900 text-left">
+                            {s.officeFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {showUSDPrice && (
+                              <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                                (${convertSARtoUSD(s.officeFee)} USD)
+                              </span>
+                            )}
+                          </span>
                         </div>
-                        <div className="flex justify-between text-slate-500">
+                        <div className="flex justify-between text-slate-400">
                           <span>{lang === 'ar' ? 'ضريبة القيمة المضافة (15%):' : 'VAT (15%):'}</span>
-                          <span className="font-bold text-slate-900">{srvTax.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}</span>
+                          <span className="font-bold text-slate-900 text-left">
+                            {srvTax.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {showUSDPrice && (
+                              <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                                (${convertSARtoUSD(srvTax)} USD)
+                              </span>
+                            )}
+                          </span>
                         </div>
                         <div className="flex justify-between font-bold text-amber-800 border-t border-slate-200 pt-1.5 mt-1.5 text-xs">
                           <span className="font-sans">{lang === 'ar' ? 'الإجمالي التقريبي:' : 'Total Cost:'}</span>
-                          <span>{srvTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}</span>
+                          <span className="text-left">
+                            {srvTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {showUSDPrice && (
+                              <span className="text-[11px] text-amber-700 font-sans font-black block">
+                                (${convertSARtoUSD(srvTotal)} USD)
+                              </span>
+                            )}
+                          </span>
                         </div>
                       </div>
 
@@ -3915,7 +5135,7 @@ export default function App() {
                             <option value="">{lang === 'ar' ? 'اختر الخدمة الإجرائية...' : 'Choose requested service...'}</option>
                             {services.map(s => (
                               <option key={s.id} value={s.id}>
-                                {getTranslatedServiceName(s.name)} ({lang === 'ar' ? 'أتعاب:' : 'Fee:'} {s.officeFee} {lang === 'ar' ? 'ر.س' : 'SAR'} + {lang === 'ar' ? 'رسوم جهة:' : 'Gov Fee:'} {s.govFee} {lang === 'ar' ? 'ر.س' : 'SAR'})
+                                {getTranslatedServiceName(s.name)} ({lang === 'ar' ? 'أتعاب:' : 'Fee:'} {s.officeFee} {lang === 'ar' ? 'ر.س' : 'SAR'}{showUSDPrice ? ` / $${convertSARtoUSD(s.officeFee)} USD` : ''} + {lang === 'ar' ? 'رسوم جهة:' : 'Gov Fee:'} {s.govFee} {lang === 'ar' ? 'ر.س' : 'SAR'}{showUSDPrice ? ` / $${convertSARtoUSD(s.govFee)} USD` : ''})
                               </option>
                             ))}
                           </select>
@@ -4151,6 +5371,30 @@ export default function App() {
                             <p className="text-slate-500 text-xs mb-3 font-mono">
                               {lang === 'ar' ? 'تاريخ تقديم الطلب المالي:' : 'Submission Date:'} {new Date(b.date).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US')}
                             </p>
+
+                            {/* Direct Interactive AI Response/Update Box (بيان الاستجابة المباشرة المخصص من الإدارة) */}
+                            <div className={`mb-4 p-3.5 rounded-xl border leading-relaxed ${
+                              b.status === 'completed' ? 'bg-emerald-500/5 border-emerald-500/15 text-emerald-950' :
+                              b.status === 'processing' ? 'bg-blue-500/5 border-blue-500/15 text-blue-950' :
+                              b.status === 'cancelled' ? 'bg-red-500/5 border-red-500/15 text-red-950' :
+                              'bg-amber-500/5 border-amber-500/15 text-amber-950'
+                            }`}>
+                              <div className="flex items-center gap-1.5 font-extrabold text-xs mb-1">
+                                <MessageSquare className={`w-4 h-4 ${
+                                  b.status === 'completed' ? 'text-emerald-500 animate-pulse' :
+                                  b.status === 'processing' ? 'text-blue-500 animate-pulse' :
+                                  b.status === 'cancelled' ? 'text-red-500 animate-pulse' :
+                                  'text-amber-500 animate-pulse'
+                                }`} />
+                                <span>{lang === 'ar' ? 'الإفادة والاستجابة المباشرة لمكتب سما المملكة:' : 'Sama Kingdom Direct Response:'}</span>
+                              </div>
+                              <p className="text-slate-750 text-[11.5px] font-medium leading-relaxed">
+                                {b.status === 'pending' && (statusMsgPending || 'قيد الانتظار لمراجعة الإدارة - نعتز بثقتكم وسنتولى معالجتها حالاً.')}
+                                {b.status === 'processing' && (statusMsgProcessing || 'تحت المعالجة الإجرائية الآن - يتم تنفيذ المعاملة ومراجعة الجهات المختصة.')}
+                                {b.status === 'completed' && (statusMsgCompleted || 'مكتملة ومستند الفاتورة جاهز - نسعد دائماً برضاكم التام.')}
+                                {b.status === 'cancelled' && (statusMsgCancelled || 'ملغية - نرجو التواصل مع الإدارة للاستفسار والتحقق.')}
+                              </p>
+                            </div>
                             
                             {/* Global Payment Status Panel */}
                             {(() => {
@@ -4430,6 +5674,69 @@ export default function App() {
                                   ))}
                                 </ul>
                               </div>
+
+                              {/* Media Gallery (Images & Videos) */}
+                              {((job.images && job.images.length > 0) || (job.videos && job.videos.length > 0)) && (
+                                <div className="space-y-2.5 border-t border-slate-100 pt-3">
+                                  <span className="font-bold text-slate-800 text-[11px] block">الوسائط والمرفقات التوضيحية:</span>
+                                  
+                                  {/* Images Grid */}
+                                  {job.images && job.images.length > 0 && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                      {job.images.map((imgUrl, idx) => (
+                                        <div key={idx} className="relative aspect-video rounded-lg overflow-hidden border border-slate-200 group bg-slate-105">
+                                          <img 
+                                            src={imgUrl} 
+                                            alt={`${job.title} - ${idx + 1}`} 
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 cursor-zoom-in"
+                                            referrerPolicy="no-referrer"
+                                            onClick={() => window.open(imgUrl, '_blank')}
+                                            onError={(e) => {
+                                              // Fallback if image fails to load
+                                              (e.target as HTMLImageElement).style.opacity = '0.5';
+                                            }}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* Videos List */}
+                                  {job.videos && job.videos.length > 0 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                                      {job.videos.map((vidUrl, idx) => {
+                                        const isDirectVideo = vidUrl.endsWith('.mp4') || vidUrl.endsWith('.webm') || vidUrl.endsWith('.ogg') || vidUrl.includes('mp4') || vidUrl.includes('webm');
+                                        return (
+                                          <div key={idx} className="rounded-lg overflow-hidden border border-slate-200 bg-slate-950 aspect-video flex flex-col justify-between">
+                                            {isDirectVideo ? (
+                                              <video 
+                                                src={vidUrl} 
+                                                controls 
+                                                preload="metadata"
+                                                className="w-full h-full object-contain"
+                                                referrerPolicy="no-referrer"
+                                              />
+                                            ) : (
+                                              <div className="h-full flex flex-col justify-center items-center p-4 text-center text-slate-300 space-y-2">
+                                                <LucideIcons.Video className="w-8 h-8 text-amber-500 animate-pulse" />
+                                                <span className="text-[10px] text-slate-400 truncate max-w-full">دليل فيديو للوظيفة</span>
+                                                <a 
+                                                  href={vidUrl} 
+                                                  target="_blank" 
+                                                  rel="noreferrer" 
+                                                  className="bg-amber-600 hover:bg-amber-500 text-slate-950 text-[10px] font-black px-2.5 py-1 rounded transition-all active:scale-95"
+                                                >
+                                                  تشغيل الفيديو الخارجي ↗
+                                                </a>
+                                              </div>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
                             {/* Card Footer actions */}
@@ -4893,7 +6200,6 @@ export default function App() {
                           // Potential revenues calculated for non-cancelled linked bookings
                           const potentialRevenue = activeCount * s.officeFee;
                           const successRate = totalCount > 0 ? ((completedCount / (activeCount || 1)) * 100) : 0;
-
                           return (
                             <tr key={s.id} className="hover:bg-slate-50/50 transition-colors">
                               <td className="p-3">
@@ -5156,7 +6462,7 @@ export default function App() {
                                           <a
                                             href={att.data}
                                             download={att.name}
-                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-955 bg-amber-550 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-1.5 py-0.5 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-955 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-1.5 py-0.5 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
                                             title="تنزيل هذا المستند مباشرة"
                                             onClick={(e) => e.stopPropagation()}
                                           >
@@ -5197,6 +6503,36 @@ export default function App() {
                                       </div>
                                     )
                                   )}
+
+                                  {/* Admin Comments Section */}
+                                  <div className="mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl max-w-sm text-right space-y-1.5 shadow-3xs" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-[10.5px] font-black text-slate-705 text-slate-700 flex items-center gap-1.5 font-sans">
+                                        <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
+                                        ملاحظات وتوجيهات الإدارة الرقابية الموحدة:
+                                      </span>
+                                      {b.adminComments ? (
+                                        <span className="text-[9px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-250 px-1.5 py-0.5 rounded-full font-sans">
+                                          مستندة ✅
+                                        </span>
+                                      ) : (
+                                        <span className="text-[9px] font-extrabold bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-full font-sans">
+                                          لا تعليق ✉️
+                                        </span>
+                                      )}
+                                    </div>
+                                    <textarea
+                                      key={`${b.id}-${b.adminComments || ''}`}
+                                      defaultValue={b.adminComments || ''}
+                                      onBlur={(e) => handleUpdateAdminComments(b.id, e.target.value)}
+                                      placeholder="أضف توجيهات الموظفين وملاحظات المعاملة الإدارية الخاصة بالطلب..."
+                                      rows={2}
+                                      className="w-full text-[11px] text-slate-900 placeholder:text-slate-400 bg-white border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition font-sans leading-relaxed text-right"
+                                    />
+                                    <p className="text-[9px] text-slate-400 leading-none">
+                                      * تدعم المزامنة السحابية والحفظ التلقائي بمجرد الكتابة والضغط خارج المربع.
+                                    </p>
+                                  </div>
                                 </td>
                                 <td className="p-4">
                                   <div className="flex flex-col gap-1 max-w-[180px]">
@@ -5441,6 +6777,97 @@ export default function App() {
                       </span>
                       {transactions.length > 0 && (
                         <>
+                          {/* Target Month Select for Batch PDF Export */}
+                          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg p-1">
+                            <span className="text-[10px] font-bold text-slate-700 font-sans px-1">
+                              تجميع فواتير شهر:
+                            </span>
+                            <select
+                              value={selectedExportMonth}
+                              onChange={(e) => setSelectedExportMonth(e.target.value)}
+                              className="bg-white border border-slate-200 text-[10.5px] font-extrabold font-sans rounded px-1.5 py-0.5 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-slate-900"
+                            >
+                              {(() => {
+                                const months = new Set<string>();
+                                // Always seed some typical months or current month
+                                const nowStr = new Date().toISOString().substring(0, 7);
+                                months.add(nowStr);
+                                // Gather all months from active transaction dates
+                                transactions.forEach(t => {
+                                  if (t.date) {
+                                    months.add(t.date.substring(0, 7));
+                                  }
+                                });
+                                const arabicMonthsNames: Record<string, string> = {
+                                  '01': 'يناير', '02': 'فبراير', '03': 'مارس', '04': 'أبريل',
+                                  '05': 'مايو', '06': 'يونيو', '07': 'يوليو', '08': 'أغسطس',
+                                  '09': 'سبتمبر', '10': 'أكتوبر', '11': 'نوفمبر', '12': 'ديسمبر'
+                                };
+                                return Array.from(months).sort().reverse().map(m => {
+                                  const [y, mon] = m.split('-');
+                                  const label = `${arabicMonthsNames[mon] || mon} ${y}`;
+                                  return (
+                                    <option key={m} value={m}>
+                                      {label}
+                                    </option>
+                                  );
+                                });
+                              })()}
+                            </select>
+                            
+                            <button
+                              type="button"
+                              onClick={() => handleExportMonthlyInvoicesPDF(selectedExportMonth)}
+                              className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black px-2.5 py-1 rounded text-[11px] shadow-sm transition duration-150 flex items-center gap-1 active:scale-98 cursor-pointer"
+                              title="تصدير جميع فواتير هذا الشهر المحدد دفعة واحدة كملف PDF مجمع ومطبوع"
+                            >
+                              <Printer className="w-3 h-3 text-slate-950" />
+                              <span>تصدير PDF المجمع 📥</span>
+                            </button>
+                          </div>
+
+                          {/* Selected Client Select for Bulk Invoice PDF Export */}
+                          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg p-1">
+                            <span className="text-[10px] font-bold text-slate-700 font-sans px-1">
+                              تصدير فواتير العميل:
+                            </span>
+                            <select
+                              value={selectedExportClient}
+                              onChange={(e) => setSelectedExportClient(e.target.value)}
+                              className="bg-white border border-slate-200 text-[10.5px] font-extrabold font-sans rounded px-1.5 py-0.5 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 text-slate-900"
+                            >
+                              <option value="">-- اختر عميلاً --</option>
+                              {(() => {
+                                const clients = new Set<string>();
+                                transactions.forEach(t => {
+                                  if (t.clientName) {
+                                    clients.add(t.clientName.trim());
+                                  }
+                                });
+                                return Array.from(clients).sort().map(client => (
+                                  <option key={client} value={client}>
+                                    {client}
+                                  </option>
+                                ));
+                              })()}
+                            </select>
+                            
+                            <button
+                              type="button"
+                              onClick={() => handleExportClientInvoicesPDF(selectedExportClient)}
+                              disabled={!selectedExportClient}
+                              className={`font-black px-2.5 py-1 rounded text-[11px] shadow-sm transition duration-150 flex items-center gap-1 active:scale-98 cursor-pointer ${
+                                selectedExportClient 
+                                  ? 'bg-amber-600 hover:bg-amber-500 text-slate-950' 
+                                  : 'bg-slate-200 text-slate-400 border border-slate-300 cursor-not-allowed'
+                              }`}
+                              title="تصدير جميع فواتير هذا العميل المحدد دفعة واحدة كملف PDF مجمع ومطبوع"
+                            >
+                              <Printer className="w-3 h-3 text-current" />
+                              <span>تصدير جماعي 📥</span>
+                            </button>
+                          </div>
+
                           <button
                             type="button"
                             onClick={handleExportTransactionsCSV}
@@ -6067,6 +7494,23 @@ export default function App() {
                             className="w-4 h-4 text-amber-500 bg-slate-950 border-slate-700 rounded focus:ring-amber-500 cursor-pointer"
                           />
                         </div>
+
+                        {/* USD Pricing Display toggle */}
+                        <div className="bg-slate-950/40 border border-slate-800 p-3 rounded-xl flex items-center justify-between col-span-1 sm:col-span-2">
+                          <div className="text-right">
+                            <span className="text-[11px] text-amber-400 font-extrabold pr-2 block">🇺🇸 عرض الأسعار المزدوج بالدولار الأمريكي (USD Pricing Display)</span>
+                            <span className="text-[9.5px] text-slate-400 pr-2 block">عند تفعيله، سيتم عرض الأسعار التقديرية لجميع المعاملات بالدولار الأمريكي ($ USD) بجانب الريال السعودي لخدمة وتسهيل الحجوزات للعملاء الدوليين.</span>
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={showUSDPrice}
+                            onChange={(e) => {
+                              setShowUSDPrice(e.target.checked);
+                              localStorage.setItem('sm_show_usd', String(e.target.checked));
+                            }}
+                            className="w-4 h-4 text-amber-500 bg-slate-950 border-slate-700 rounded focus:ring-amber-500 cursor-pointer"
+                          />
+                        </div>
                       </div>
 
                       <div className="bg-slate-950/40 border border-slate-800 p-3.5 rounded-xl text-[10px] text-slate-400 leading-relaxed text-right space-y-1 font-sans">
@@ -6084,7 +7528,8 @@ export default function App() {
                         localStorage.setItem('sm_paypal_email', paymentGatewayPaypalEmail);
                         localStorage.setItem('sm_mada_active', String(paymentGatewayMadaActive));
                         localStorage.setItem('sm_fawry_active', String(paymentGatewayFawryActive));
-                        alert('تم تحديث وحفظ إعدادات ربط بوابات الدفع في جميع الدول بنجاح!');
+                        localStorage.setItem('sm_show_usd', String(showUSDPrice));
+                        alert('تم تحديث وحفظ إعدادات ربط بوابات الدفع وتسعير الدولار بنجاح!');
                       }}
                       className="bg-amber-600 hover:bg-amber-500 text-slate-950 font-black px-6 py-2.5 rounded-lg text-xs shadow-md transition duration-150 flex items-center gap-2 active:scale-98 cursor-pointer"
                     >
@@ -6372,19 +7817,47 @@ export default function App() {
                         <div className="border-t border-slate-250 pt-4 mt-2 space-y-2 text-xs">
                           <div className="flex justify-between font-sans">
                             <span className="text-slate-500">رسوم جهات الدولة:</span>
-                            <span className="font-bold text-slate-950 font-mono">{newSrvGovFee.toFixed(2)} ر.س</span>
+                            <span className="font-bold text-slate-950 font-mono text-left">
+                              {newSrvGovFee.toFixed(2)} ر.س
+                              {showUSDPrice && (
+                                <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                                  (${convertSARtoUSD(newSrvGovFee)} USD)
+                                </span>
+                              )}
+                            </span>
                           </div>
                           <div className="flex justify-between font-sans">
                             <span className="text-slate-500">أتعاب المكتب المعيارية:</span>
-                            <span className="font-bold text-slate-950 font-mono">{(newSrvOfficeFee * 1.15).toFixed(2)} ر.س</span>
+                            <span className="font-bold text-slate-950 font-mono text-left">
+                              {(newSrvOfficeFee * 1.15).toFixed(2)} ر.س
+                              {showUSDPrice && (
+                                <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                                  (${convertSARtoUSD(newSrvOfficeFee * 1.15)} USD)
+                                </span>
+                              )}
+                            </span>
                           </div>
                           <div className="flex justify-between text-slate-400 text-[10px] pr-2 border-r-2 border-slate-200 font-sans">
                             <span>شامل ضريبة مضافة:</span>
-                            <span className="font-mono font-bold text-slate-700">{(newSrvOfficeFee * 0.15).toFixed(2)} ر.س</span>
+                            <span className="font-mono font-bold text-slate-700 text-left">
+                              {(newSrvOfficeFee * 0.15).toFixed(2)} ر.س
+                              {showUSDPrice && (
+                                <span className="text-[9px] text-slate-500 font-sans font-normal block">
+                                  (${convertSARtoUSD(newSrvOfficeFee * 0.15)} USD)
+                                </span>
+                              )}
+                            </span>
                           </div>
                           <div className="flex justify-between border-t border-dashed border-slate-150 pt-2 font-black text-amber-800 text-sm font-sans">
                             <span>التكلفة الإجمالية:</span>
-                            <span className="font-mono font-bold text-amber-950">{(newSrvGovFee + newSrvOfficeFee * 1.15).toFixed(2)} ر.س</span>
+                            <span className="font-mono font-bold text-amber-950 text-left">
+                              {(newSrvGovFee + newSrvOfficeFee * 1.15).toFixed(2)} ر.س
+                              {showUSDPrice && (
+                                <span className="text-[11px] text-amber-700 font-sans font-black block">
+                                  (${convertSARtoUSD(newSrvGovFee + newSrvOfficeFee * 1.15)} USD)
+                                </span>
+                              )}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -7358,6 +8831,112 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* AUTO-SCHEDULING FOLLOW-UP REMINDERS SYSTEM */}
+                <div className="bg-white p-6 rounded-xl shadow border border-slate-200 space-y-5 font-sans">
+                  <div className="border-b border-slate-100 pb-4 text-right">
+                    <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2 justify-start">
+                      <Clock className="w-5 h-5 text-amber-600 animate-pulse" />
+                      <span>{lang === 'ar' ? 'الجدولة التلقائية لرسائل (التذكير بالمتابعة) المتأخرة لأكثر من ٧ أيام' : 'Auto-Scheduling for Follow-up Reminders (> 7 Days)'}</span>
+                    </h3>
+                    <p className="text-slate-500 text-xs mt-1 leading-relaxed">
+                      {lang === 'ar' 
+                        ? 'إدارة النظام الذكي لملاحظة وتقصي كافة المعاملات التي لا تزال في حالة "تحت المعالجة الإجرائية والتعقيب" (Processing) لمدة تتجاوز ٧ أيام من بدء المعاملة، وبث رسائل تذكير تلقائية لهم بالواتساب بهدف طمأنة وتأكيد اهتمام سما المملكة.'
+                        : 'Manage the smart engine that tracks customer transactions staying in "Processing" status for more than 7 days, sending automatic follow-up reminders on WhatsApp to reassure clients.'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+                    {/* Toggle Selector */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between h-full text-right">
+                      <div>
+                        <span className="text-xs font-black text-slate-700 block mb-1">
+                          {lang === 'ar' ? 'حالة الجدولة والربط التلقائي:' : 'Auto Scheduler Status:'}
+                        </span>
+                        <p className="text-[10px] text-slate-450 leading-relaxed font-sans mb-3">
+                          {lang === 'ar'
+                            ? 'عند تفعيلها، يقوم النظام بفحص السجلات تلقائياً بمجرد تشغيل البوابة وإرسال التنبيهات.'
+                            : 'When enabled, the system scans records automatically on launch & periodically.'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const nextState = !autoReminderEnabled;
+                            setAutoReminderEnabled(nextState);
+                            localStorage.setItem('sm_auto_reminder_enabled', String(nextState));
+                          }}
+                          className={`w-full py-2 px-4 rounded-lg font-bold text-xs cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+                            autoReminderEnabled 
+                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm' 
+                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                          }`}
+                        >
+                          <span className={`w-2 h-2 rounded-full ${autoReminderEnabled ? 'bg-white animate-pulse' : 'bg-slate-400'}`}></span>
+                          <span>
+                            {autoReminderEnabled 
+                              ? (lang === 'ar' ? 'نشطة وتعمل بالخلفية' : 'Active & Running') 
+                              : (lang === 'ar' ? 'معطلة بالكامل' : 'Disabled')}
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Operational indicators / Live status */}
+                    <div className="bg-amber-50/40 p-4 rounded-xl border border-amber-200/50 flex flex-col justify-between h-full text-right">
+                      <div>
+                        <span className="text-xs font-black text-amber-900 block mb-1 font-sans">
+                          {lang === 'ar' ? '📊 المعاملات المستحقة للتذكير الآلي اليوم:' : 'Pending Auto Reminders Today:'}
+                        </span>
+                        <p className="text-[10px] text-slate-450 leading-relaxed font-sans mb-3">
+                          {lang === 'ar'
+                            ? 'عدد العملاء الذين قضوا أكثر من ٧ أيام ولم يحصلوا على رسائل تذكير بالواتساب بالآونة الأخيرة.'
+                            : 'Number of processing clients > 7 days holding pending reminders.'}
+                        </p>
+                      </div>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-black text-amber-950 font-mono">
+                          {bookings.filter(b => {
+                            if (b.status !== 'processing' || b.isArchived) return false;
+                            const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
+                            if (daysInProcessing < 7) return false;
+                            if (b.lastReminderSent) {
+                              const daysSinceLast = Math.floor((new Date().getTime() - new Date(b.lastReminderSent).getTime()) / (1000 * 60 * 60 * 24));
+                              if (daysSinceLast < 7) return false;
+                            }
+                            return true;
+                          }).length}
+                        </span>
+                        <span className="text-[10.5px] text-amber-800 font-bold bg-amber-100/60 px-2 py-0.5 rounded-full font-sans">
+                          {lang === 'ar' ? 'عميل مستحق للدعم' : 'Eligible clients'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Force trigger scan button */}
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-between h-full text-right">
+                      <div>
+                        <span className="text-xs font-black text-slate-700 block mb-1 text-right">
+                          {lang === 'ar' ? '⚡ التشغيل اليدوي للجدولة كـ فحص فوري:' : 'Force Trigger Scan:'}
+                        </span>
+                        <p className="text-[10px] text-slate-450 leading-relaxed font-sans mb-3 text-right">
+                          {lang === 'ar'
+                            ? 'قم بتشغيل الفحص الفوري والمراجعة على كافة السجلات، ومحاكاة البث الآن بشكل لحظي.'
+                            : 'Manually parse all records now and dispatch all eligible follow-up SMS.'}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => runAutoProcessingReminders(true)}
+                        className="w-full py-2 px-4 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition-all shadow cursor-pointer flex items-center justify-center gap-1.5 active:scale-98"
+                      >
+                        <Zap className="w-3.5 h-3.5" />
+                        <span>{lang === 'ar' ? 'فحص السجلات وبث التذكيرات الآن' : 'Run Scan & Remind Now'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 {/* TEMPLATE CUSTOMIZATION SECTION */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
@@ -7690,9 +9269,14 @@ export default function App() {
                           {whatsappLogs.map((log) => (
                             <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                               <td className="p-3 font-sans">
-                                <div className="font-bold text-slate-850 flex items-center gap-1.5">
+                                <div className="font-bold text-slate-850 flex items-center gap-1.5 flex-wrap">
                                   <Smartphone className="w-3.5 h-3.5 text-slate-400" />
                                   <span>{log.clientName}</span>
+                                  {log.id.includes('auto') && (
+                                    <span className="inline-flex mr-1 py-0.5 px-1.5 rounded-full text-[8.5px] font-black bg-amber-500 text-white animate-pulse">
+                                      {lang === 'ar' ? '⏰ جدولة تلقائية' : '⏰ Auto Scheduled'}
+                                    </span>
+                                  )}
                                 </div>
                                 <span className="text-[10px] font-mono text-slate-500 block mt-0.5">{log.phoneNumber}</span>
                               </td>
@@ -7892,9 +9476,64 @@ export default function App() {
                           />
                         </div>
 
+                        {/* Images list input */}
+                        <div className="space-y-1 text-right">
+                          <label className="block text-slate-700 font-extrabold text-[11px]">روابط صور توضيحية للوظيفة (رابط واحد في كل سطر أو مفصولة بفاصلة):</label>
+                          <textarea
+                            rows={2}
+                            value={newJobImages}
+                            onChange={(e) => setNewJobImages(e.target.value)}
+                            placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png"
+                            className="w-full border border-slate-200 p-2 rounded-lg focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 text-slate-900 font-mono placeholder:text-slate-400 text-[10px]"
+                          />
+                        </div>
+
+                        {/* Videos list input */}
+                        <div className="space-y-1 text-right">
+                          <label className="block text-slate-700 font-extrabold text-[11px]">روابط فيديوهات توضيحية للوظيفة (رابط واحد في كل سطر أو مفصولة بفاصلة):</label>
+                          <textarea
+                            rows={2}
+                            value={newJobVideos}
+                            onChange={(e) => setNewJobVideos(e.target.value)}
+                            placeholder="https://example.com/intro.mp4&#10;https://example.com/tour.mp4"
+                            className="w-full border border-slate-200 p-2 rounded-lg focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 text-slate-900 font-mono placeholder:text-slate-400 text-[10px]"
+                          />
+                        </div>
+
+                        {/* Auto Sync Social Channels Toggles */}
+                        <div className="bg-emerald-50/70 border border-emerald-150 rounded-xl p-3 space-y-2.5">
+                          <span className="block text-[10px] font-black text-emerald-800 font-sans">⚡ المزامنة العكسية التلقائية للبوت:</span>
+                          
+                          <label className="flex items-center justify-between cursor-pointer select-none group">
+                            <span className="text-[11.5px] text-slate-700 font-extrabold group-hover:text-slate-950 transition">مشاركة تلقائية فورياً بقناة الواتساب المعلنة</span>
+                            <div className="relative flex items-center">
+                              <input 
+                                type="checkbox" 
+                                checked={syncToWhatsapp} 
+                                onChange={(e) => setSyncToWhatsapp(e.target.checked)} 
+                                className="sr-only peer" 
+                              />
+                              <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-550 peer-checked:bg-emerald-600"></div>
+                            </div>
+                          </label>
+
+                          <label className="flex items-center justify-between cursor-pointer select-none group">
+                            <span className="text-[11.5px] text-slate-700 font-extrabold group-hover:text-slate-950 transition">مشاركه تلقائية فورياً بصفحة الفيس بوك الرسمية</span>
+                            <div className="relative flex items-center">
+                              <input 
+                                type="checkbox" 
+                                checked={syncToFacebook} 
+                                onChange={(e) => setSyncToFacebook(e.target.checked)} 
+                                className="sr-only peer" 
+                              />
+                              <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-3.5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-550 peer-checked:bg-emerald-600"></div>
+                            </div>
+                          </label>
+                        </div>
+
                         <button
                           type="submit"
-                          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-lg text-xs leading-none transition shadow"
+                          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-lg text-xs leading-none transition shadow cursor-pointer"
                         >
                           حفظ وتثبيت ونشر الإعلان فوراً بالموقع
                         </button>
@@ -7979,6 +9618,24 @@ export default function App() {
                                   className="w-full text-right p-2 rounded border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 bg-white hover:border-emerald-500/45 transition duration-150 font-sans truncate cursor-pointer"
                                 >
                                   🔵 منشور الفيسبوك (أخصائي خدمة عملاء مبيعات)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSocialImportText(
+                                    `نعلن في مكتب سما المملكة عن حاجة العمل لتوظيف مصمم جرافيك ومعد هوية بصرية محترف (دوام كامل) لفرعنا الرئيسي بالملز.\n\nالمهام المطلوبة:\n- تصميم البروشورات الإعلانية والهوية الرقمية\n- خبرة ببرامج Adobe (Photoshop, Illustrator)\n- الراتب: 8,500 ريال سعودي شهرياً.\n\nتصميم وبنر الوظيفة المرفق:\nhttps://images.unsplash.com/photo-1626785774573-4b799315345d?w=600&auto=format&fit=crop`
+                                  )}
+                                  className="w-full text-right p-2 rounded border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 bg-white hover:border-emerald-500/45 transition duration-150 font-sans truncate cursor-pointer"
+                                >
+                                  📸 منشور الواتس اب المرفق بصورة (مصمم جرافيك)
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSocialImportText(
+                                    `فرصة وظيفية فريدة للإنضمام إلى فريق مكتب سما المملكة للخدمات العامة!\nمطلوب أخصائي تمثيل قانوني ومستشار علاقات تجارية مرخص للعمل في جدة.\nالمهام الأساسية:\n- كتابة العقود وتمثيل المكتب أمام الهيئات والشركات الكبرى\n- خبرة لا تقل عن خمس سنوات في العلاقات الحكومية بمحافظة جدة\n- الراتب: 12,000 ريال شهرياً.\n\nفيديو الجولة التعريفية المرفق بالمنشور:\nhttps://assets.mixkit.co/videos/preview/mixkit-working-overtime-at-the-office-39824-large.mp4`
+                                  )}
+                                  className="w-full text-right p-2 rounded border border-slate-200 hover:bg-slate-50 text-[10px] text-slate-700 bg-white hover:border-emerald-500/45 transition duration-150 font-sans truncate cursor-pointer"
+                                >
+                                  🎥 منشور الفيسبوك المرفق بفيديو (أخصائي تمثيل قانوني)
                                 </button>
                               </div>
                             </div>
@@ -8582,19 +10239,47 @@ export default function App() {
               <div className="bg-slate-50 p-3 rounded-lg border border-slate-150 space-y-1.5 font-mono">
                 <p className="flex justify-between items-center bg-white p-2 rounded border border-slate-200">
                   <span className="font-sans text-slate-500 block">تكاليف الدولة (الوزارات والجهات ورسوم المصدقة):</span>
-                  <strong className="text-slate-900 font-bold block">{infoPopupService.govFee.toFixed(2)} ر.س</strong>
+                  <strong className="text-slate-900 font-bold block text-left">
+                    {infoPopupService.govFee.toFixed(2)} ر.س
+                    {showUSDPrice && (
+                      <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                        (${convertSARtoUSD(infoPopupService.govFee)} USD)
+                      </span>
+                    )}
+                  </strong>
                 </p>
                 <p className="flex justify-between items-center bg-white p-2 rounded border border-slate-200">
                   <span className="font-sans text-slate-500 block">أتعاب مراجعة مكتب سما المملكة الإستخلاصي:</span>
-                  <strong className="text-slate-900 font-bold block">{infoPopupService.officeFee.toFixed(2)} ر.س</strong>
+                  <strong className="text-slate-900 font-bold block text-left">
+                    {infoPopupService.officeFee.toFixed(2)} ر.س
+                    {showUSDPrice && (
+                      <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                        (${convertSARtoUSD(infoPopupService.officeFee)} USD)
+                      </span>
+                    )}
+                  </strong>
                 </p>
                 <p className="flex justify-between items-center bg-white p-2 rounded border border-slate-300">
                   <span className="font-sans text-slate-500 block">ضريبة القيمة المضافة المحسوبة (15%):</span>
-                  <strong className="text-slate-700 block">{(infoPopupService.officeFee * 0.15).toFixed(2)} ر.س</strong>
+                  <strong className="text-slate-700 block text-left">
+                    {(infoPopupService.officeFee * 0.15).toFixed(2)} ر.س
+                    {showUSDPrice && (
+                      <span className="text-[10px] text-slate-500 font-sans font-normal block">
+                        (${convertSARtoUSD(infoPopupService.officeFee * 0.15)} USD)
+                      </span>
+                    )}
+                  </strong>
                 </p>
                 <p className="flex justify-between items-center bg-amber-50 p-2.5 rounded border border-amber-300 font-bold leading-normal text-amber-950 font-sans text-sm">
                   <span>الإجمالي الضريبي التقريبي:</span>
-                  <span className="font-mono">{(infoPopupService.govFee + infoPopupService.officeFee + (infoPopupService.officeFee * 0.15)).toFixed(2)} ر.س</span>
+                  <span className="font-mono text-left">
+                    {(infoPopupService.govFee + infoPopupService.officeFee + (infoPopupService.officeFee * 0.15)).toFixed(2)} ر.س
+                    {showUSDPrice && (
+                      <span className="text-[11px] text-amber-700 font-sans font-black block">
+                        (${convertSARtoUSD(infoPopupService.govFee + infoPopupService.officeFee + (infoPopupService.officeFee * 0.15))} USD)
+                      </span>
+                    )}
+                  </span>
                 </p>
               </div>
 
