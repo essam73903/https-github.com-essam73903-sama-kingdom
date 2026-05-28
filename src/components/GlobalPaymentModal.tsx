@@ -335,7 +335,7 @@ export function GlobalPaymentModal({
       >
         
         {/* Gateway Safe Lock Header */}
-        <div className="bg-gradient-to-r from-slate-900 via-slate-850 to-slate-900 p-5 text-white flex justify-between items-center select-none">
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 p-5 text-white flex justify-between items-center select-none">
           <div className="flex items-center gap-2.5">
             <div className="bg-emerald-500/10 border border-emerald-500/30 p-2 rounded-xl text-emerald-400">
               <Lock className="w-5 h-5 flex-shrink-0 animate-pulse" />
@@ -377,7 +377,7 @@ export function GlobalPaymentModal({
         </div>
 
         {/* Main interactive Wizard Body container */}
-        <div className="p-6 flex-1 text-slate-850 font-sans">
+        <div className="p-6 flex-1 text-slate-800 font-sans">
           
           {/* Quick Invoice Info Bar */}
           <div className="bg-amber-500/5 border border-amber-500/10 rounded-2xl p-4 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -435,7 +435,7 @@ export function GlobalPaymentModal({
               <div className="flex justify-between items-center border-b border-slate-150 pb-2.5">
                 <div className="space-y-0.5">
                   <h3 className="font-extrabold text-sm text-slate-900">الخطوة الثانية: اختيار القناة البنكية للسداد</h3>
-                  <p className="text-slate-500 text-xs text-right">العملة والبلد المحسوب: <span className="text-amber-850 font-black">{selectedCountry.flag} {selectedCountry.name}</span></p>
+                  <p className="text-slate-500 text-xs text-right">العملة والبلد المحسوب: <span className="text-amber-800 font-black">{selectedCountry.flag} {selectedCountry.name}</span></p>
                 </div>
                 
                 <button
@@ -637,7 +637,7 @@ export function GlobalPaymentModal({
 
                   <button
                     type="submit"
-                    className="w-full bg-slate-950 border border-slate-900 hover:bg-slate-850 text-white font-black py-3.5 rounded-xl text-xs sm:text-sm tracking-wide shadow-md transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full bg-slate-950 border border-slate-900 hover:bg-slate-800 text-white font-black py-3.5 rounded-xl text-xs sm:text-sm tracking-wide shadow-md transition-all active:scale-98 flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <span>التأكيد الآمن والتحويل للطلب المالي الدولي</span>
                     <strong className="font-mono">({localPriceLabel})</strong>
@@ -728,7 +728,7 @@ export function GlobalPaymentModal({
                     setStep('processing');
                     simulatePaymentProcess(bankTxRef.trim());
                   }}
-                  className="space-y-4 font-sans text-xs text-right text-slate-850 animate-fade-in"
+                  className="space-y-4 font-sans text-xs text-right text-slate-800 animate-fade-in"
                 >
                   <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-2xl text-emerald-950 space-y-1">
                     <h4 className="font-extrabold text-xs">معلومات الحوالة المصرفية لتسوية وسداد الرسوم</h4>
@@ -775,7 +775,7 @@ export function GlobalPaymentModal({
                   {!bankIbanSubmitted ? (
                     <button
                       type="submit"
-                      className="w-full bg-slate-950 text-white font-black py-3 rounded-xl hover:bg-slate-850 transition-all cursor-pointer text-center text-xs flex justify-center items-center gap-1.5 shadow"
+                      className="w-full bg-slate-950 text-white font-black py-3 rounded-xl hover:bg-slate-800 transition-all cursor-pointer text-center text-xs flex justify-center items-center gap-1.5 shadow"
                     >
                       <span>لقد أتممت التحويل البنكي - ترحيل رقم المطابقة والتحقق الفوري</span>
                     </button>
@@ -873,7 +873,7 @@ export function GlobalPaymentModal({
                 <div className="w-14 h-14 bg-emerald-100 border border-emerald-200 rounded-full flex items-center justify-center text-emerald-800 mx-auto">
                   <Check className="w-8 h-8 font-black" />
                 </div>
-                <h3 className="font-black text-emerald-850 text-base leading-tight">تهانينا! تم تحصيل وقبول دفعة السداد الدولي بنجاح</h3>
+                <h3 className="font-black text-emerald-800 text-base leading-tight">تهانينا! تم تحصيل وقبول دفعة السداد الدولي بنجاح</h3>
                 <p className="text-slate-500 text-xs max-w-sm mx-auto">تم إخطار مهندس النظام ومسؤول مكتب سما المملكة لتسجيل الإيداع وربطه مع المعاملة وسيرها فوراً دون تأخير.</p>
               </div>
 
@@ -918,7 +918,7 @@ export function GlobalPaymentModal({
 
                   <div className="text-left font-sans">
                     <span className="text-[10px] text-slate-500 block">المبلغ المقبوض بالعملة المحلية:</span>
-                    <strong className="text-sm text-emerald-850 font-mono font-black">{localPriceLabel}</strong>
+                    <strong className="text-sm text-emerald-800 font-mono font-black">{localPriceLabel}</strong>
                     <span className="text-[9px] text-slate-400 font-mono block">ما يعادل: ({totalAmountSAR.toFixed(2)} ر.س)</span>
                   </div>
                 </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import * as XLSX from 'xlsx';
 import { 
   Briefcase, Compass, Users, FileText, Truck, Plane, 
   TrendingUp, Coins, Receipt, CreditCard, Calendar, Search, Lock, 
@@ -54,13 +55,13 @@ const getWhatsAppCredential = (key: string, envVal: string | undefined): string 
 };
 
 export const AVAILABLE_PAYMENT_METHODS = [
-  { id: 'sadad', name: 'سداد للمدفوعات الحكومية', badge: 'سداد 🇸🇦', color: 'bg-teal-50 text-teal-805 border-teal-200 hover:bg-teal-100/50' },
-  { id: 'mada', name: 'بطاقة مدى الوطنية', badge: 'مدى 💳', color: 'bg-sky-50 text-sky-805 border-sky-200 hover:bg-sky-100/50' },
-  { id: 'credit_card', name: 'فيزا وماستركارد الدولية', badge: 'فيزا/ماستر 🌐', color: 'bg-indigo-50 text-indigo-805 border-indigo-200 hover:bg-indigo-100/50' },
-  { id: 'applepay', name: 'Apple Pay الآمن المباشر', badge: 'Apple Pay ', color: 'bg-neutral-100 text-neutral-805 border-neutral-300 hover:bg-neutral-200/50' },
-  { id: 'stcpay', name: 'محفظة STC Pay الرقمية', badge: 'STC Pay 📱', color: 'bg-fuchsia-50 text-fuchsia-805 border-fuchsia-200 hover:bg-fuchsia-100/50' },
+  { id: 'sadad', name: 'سداد للمدفوعات الحكومية', badge: 'سداد 🇸🇦', color: 'bg-teal-50 text-teal-800 border-teal-200 hover:bg-teal-100/50' },
+  { id: 'mada', name: 'بطاقة مدى الوطنية', badge: 'مدى 💳', color: 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100/50' },
+  { id: 'credit_card', name: 'فيزا وماستركارد الدولية', badge: 'فيزا/ماستر 🌐', color: 'bg-indigo-50 text-indigo-800 border-indigo-200 hover:bg-indigo-100/50' },
+  { id: 'applepay', name: 'Apple Pay الآمن المباشر', badge: 'Apple Pay ', color: 'bg-neutral-100 text-neutral-800 border-neutral-300 hover:bg-neutral-200/50' },
+  { id: 'stcpay', name: 'محفظة STC Pay الرقمية', badge: 'STC Pay 📱', color: 'bg-fuchsia-50 text-fuchsia-800 border-fuchsia-200 hover:bg-fuchsia-100/50' },
   { id: 'paypal', name: 'بوابة PayPal العالمية', badge: 'PayPal 🅿️', color: 'bg-blue-50 text-blue-900 border-blue-200 hover:bg-blue-100/50' },
-  { id: 'fawry', name: 'شبكة فوري السريعة للمدفوعات', badge: 'فوري ⚡', color: 'bg-amber-50 text-amber-805 border-amber-200 hover:bg-amber-100/50' },
+  { id: 'fawry', name: 'شبكة فوري السريعة للمدفوعات', badge: 'فوري ⚡', color: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100/50' },
   { id: 'bank_transfer', name: 'تحويل بنكي مباشر (بنك الأهلي)', badge: 'تحويل بنكي 🏦', color: 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100/50' }
 ];
 
@@ -607,12 +608,18 @@ export default function App() {
   // Temporary client-side rating and comment state hooks
   const [tempBookingRatings, setTempBookingRatings] = useState<Record<string, number>>({});
   const [tempBookingComments, setTempBookingComments] = useState<Record<string, string>>({});
+  
+  // States for client-side editing of request notes during status tracking
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
+  const [editingNotesValue, setEditingNotesValue] = useState<string>('');
 
   // Selected Transaction for printable Invoice view
   const [selectedTx, setSelectedTx] = useState<Transaction | null>(null);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [selectedExportMonth, setSelectedExportMonth] = useState<string>('2026-05');
   const [selectedExportClient, setSelectedExportClient] = useState<string>('');
+  const [exportStartDate, setExportStartDate] = useState<string>('');
+  const [exportEndDate, setExportEndDate] = useState<string>('');
 
   // Global International Online Payment Modal States
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -1358,13 +1365,12 @@ export default function App() {
     if (!trimmed) {
       return "رقم جوال العميل حقل أساسي ومطلوب لاستقبال إشعارات الـ WhatsApp الفورية.";
     }
-    // Accepts 10 digits starting with 05 (strict Saudi mobile)
-    // Or 9 digits starting with 5 (such as 5xxxxxxxx)
-    // Or 12 digits starting with 9665
-    // Or 13 digits starting with +9665
-    const saudiPhoneRegex = /^(05|5|9665|\+9665)\d{8}$/;
-    if (!saudiPhoneRegex.test(trimmed)) {
-      return "صيغة الهاتف غير صحيحة. يرجى إدخال رقم جوال سعودي نشط يتكون من 10 خانات ويبدأ بـ 05 (مثل: 0501234567).";
+    // Permit any standard global phone format from any country.
+    // Cleans spaces, hyphens, and parentheses first.
+    const cleanNumbers = trimmed.replace(/[\s\-\(\)]/g, '');
+    const internationalPhoneRegex = /^(\+?|00?)\d{7,15}$/;
+    if (!internationalPhoneRegex.test(cleanNumbers)) {
+      return "صيغة الهاتف غير صحيحة. يرجى إدخال رقم جوال صحيح يشمل رمز الدولة (مثل: +966501234567 أو 0501234567).";
     }
     return null;
   };
@@ -1431,12 +1437,13 @@ export default function App() {
         serviceName: matchedService.name,
         status: 'pending',
         notes: clientNotes.trim(),
-        date: new Date().toISOString(),
-        attachedFileName: attachedFileName || undefined,
-        attachedFileData: attachedFileData || undefined,
-        attachedFileSize: attachedFileSize || undefined,
-        attachments: attachedFiles.length > 0 ? attachedFiles : undefined
+        date: new Date().toISOString()
       };
+
+      if (attachedFileName) newBooking.attachedFileName = attachedFileName;
+      if (attachedFileData) newBooking.attachedFileData = attachedFileData;
+      if (attachedFileSize) newBooking.attachedFileSize = attachedFileSize;
+      if (attachedFiles && attachedFiles.length > 0) newBooking.attachments = attachedFiles;
 
       // Write to Firestore!
       setDoc(doc(db, 'bookings', newBooking.id), newBooking)
@@ -1485,7 +1492,7 @@ export default function App() {
 
       // Pre-populate track inquiry immediately for customer's ease
       setSearchPhone(targetPhoneTrack);
-    }, 1200);
+    }, 150);
   };
 
   // Client Request status lookup
@@ -1496,6 +1503,45 @@ export default function App() {
     const results = bookings.filter(b => b.phoneNumber.replace(/\s+/g, '') === searchPhone.trim().replace(/\s+/g, ''));
     setTrackedRequests(results);
     setHasSearched(true);
+  };
+
+  // Update transaction notes from client-side tracking interface
+  const handleUpdateBookingNotes = (bookingId: string) => {
+    if (!editingNotesValue.trim()) return;
+
+    // 1. Update master bookings state and save to local storage
+    const updatedBookings = bookings.map(b => {
+      if (b.id === bookingId) {
+        return { ...b, notes: editingNotesValue.trim() };
+      }
+      return b;
+    });
+    setBookings(updatedBookings);
+    localStorage.setItem('sm_bookings', JSON.stringify(updatedBookings));
+
+    // 2. Also update trackedRequests so the seeker sees it immediately
+    const updatedTracked = trackedRequests.map(b => {
+      if (b.id === bookingId) {
+        return { ...b, notes: editingNotesValue.trim() };
+      }
+      return b;
+    });
+    setTrackedRequests(updatedTracked);
+    
+    // 3. Reset edit state
+    setEditingNotesId(null);
+    setEditingNotesValue('');
+
+    // 4. Show success toast notification
+    setWaToast({
+      show: true,
+      type: 'success',
+      message: lang === 'ar' ? 'تم تحديث مذكرات وملاحظات طلبك بنجاح!' : 'Notes updated successfully!',
+      details: lang === 'ar' ? 'تم حفظ التعديلات وإرسالها للإدارة بنجاح لمراجعتها قبل معالجة المعاملة.' : 'Your modifications have been submitted to management.'
+    });
+    setTimeout(() => {
+      setWaToast(null);
+    }, 4000);
   };
 
   // Submit Job Application
@@ -1559,7 +1605,7 @@ export default function App() {
       setApplyNotes('');
       setIsJobApplying(false);
       setSelectedJobForApply(null);
-    }, 1200);
+    }, 150);
   };
 
   // Arabic Natural Language Extractor for WhatsApp Channel and Facebook page announcements
@@ -1786,7 +1832,7 @@ export default function App() {
       if (formHead) {
         formHead.scrollIntoView({ behavior: 'smooth' });
       }
-    }, 1500);
+    }, 150);
   };
 
   // Create Job Vacancy (Admin)
@@ -2917,6 +2963,99 @@ export default function App() {
       return b;
     });
     setBookings(updated);
+  };
+
+  // Export filtered transactions to a real Excel file using XLSX library with custom date ranges
+  const handleExportTransactionsExcel = () => {
+    let filtered = [...transactions];
+    
+    if (exportStartDate) {
+      const start = new Date(exportStartDate);
+      start.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(t => new Date(t.date) >= start);
+    }
+    if (exportEndDate) {
+      const end = new Date(exportEndDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(t => new Date(t.date) <= end);
+    }
+
+    if (filtered.length === 0) {
+      setBookingToast({
+        show: true,
+        type: 'error',
+        title: lang === 'ar' ? 'لا توجد بيانات لتصديرها' : 'No data to export',
+        message: lang === 'ar' 
+          ? 'لا توجد أي معاملات مسجلة في دفتر الحسابات تقع ضمن النطاق الزمني المحدد.' 
+          : 'No transactions found in the specified date range.'
+      });
+      return;
+    }
+
+    // Prepare headers for excel file
+    const headers = [
+      lang === 'ar' ? 'رقم الفاتورة' : 'Invoice Number',
+      lang === 'ar' ? 'اسم العميل' : 'Client Name',
+      lang === 'ar' ? 'نوع الخدمة الإجرائية' : 'Service Type',
+      lang === 'ar' ? 'رسوم الجهات الحكومية (ر.س)' : 'Gov Fees (SAR)',
+      lang === 'ar' ? 'أتعاب مكتب سما المملكة (ر.س)' : 'Office Fees (SAR)',
+      lang === 'ar' ? 'ضريبة القيمة المضافة 15% (ر.س)' : 'VAT 15% (SAR)',
+      lang === 'ar' ? 'المجموع الشامل (ر.س)' : 'Total (SAR)',
+      lang === 'ar' ? 'تاريخ تسجيل القيد' : 'Date Recorded',
+      lang === 'ar' ? 'الملاحظات' : 'Notes'
+    ];
+
+    // Format rows
+    const rows = filtered.map(t => [
+      t.invoiceNumber,
+      t.clientName,
+      t.serviceName,
+      t.govFee,
+      t.officeFee,
+      t.tax,
+      t.total,
+      new Date(t.date).toLocaleDateString(lang === 'ar' ? 'ar-SA' : 'en-US'),
+      t.notes || ''
+    ]);
+
+    // Create workbook and worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, lang === 'ar' ? 'سجل الحسابات' : 'Accounts Ledger');
+
+    // Auto-fit column widths
+    const optcols = headers.map((h, i) => {
+      let maxLen = h.length;
+      rows.forEach(r => {
+        const cellVal = r[i]?.toString() || '';
+        if (cellVal.length > maxLen) maxLen = cellVal.length;
+      });
+      return { wch: Math.min(maxLen + 4, 45) };
+    });
+    worksheet['!cols'] = optcols;
+
+    // Save/write the file
+    const dateStr = new Date().toISOString().split('T')[0];
+    const rangeStr = exportStartDate || exportEndDate 
+      ? `-${exportStartDate || 'منذ_البداية'}-إلى-${exportEndDate || 'اليوم'}` 
+      : `-${dateStr}`;
+    const filename = `Sama-Kingdom-Ledger${rangeStr}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+
+    setBookingToast({
+      show: true,
+      type: 'success',
+      title: lang === 'ar' ? 'تم تصدير الدفتر المالي بنجاح' : 'Ledger Exported Successfully',
+      message: lang === 'ar' 
+        ? `تم إنشاء ملف Excel حقيقي للدفتر المالي يحتوي على (${filtered.length}) معاملة.` 
+        : `Successfully generated fully-compatible Excel file containing (${filtered.length}) transaction records.`
+    });
+
+    // Auto-close success toast after 5 seconds
+    setTimeout(() => {
+      setBookingToast(prev => prev && prev.title.includes('تصدير') ? { ...prev, show: false } : prev);
+    }, 5000);
   };
 
   // Export all transaction ledger records to a CSV file (including UTF-8 BOM for Arabic compatibility in Excel)
@@ -5043,12 +5182,12 @@ export default function App() {
                             if (!clientNameTouched) setClientNameTouched(true);
                           }}
                           placeholder={lang === 'ar' ? 'مثل: عبد الله بن محمد العتيبي' : 'e.g. Abdullah bin Muhammad Al-Otaibi'} 
-                          className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-1 font-sans shadow-sm text-sm transition-all duration-150 ${
+                          className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-1 font-sans shadow-sm text-sm transition-all duration-150 text-slate-900 font-semibold bg-white placeholder-slate-400 ${
                             !clientNameTouched 
                               ? 'border-slate-300 focus:border-amber-500 focus:ring-amber-500/30'
                               : getClientNameError(clientName)
-                                ? 'border-red-400 bg-red-50/10 focus:border-red-500 focus:ring-red-500/30 text-red-900'
-                                : 'border-emerald-500 bg-emerald-50/5 focus:border-emerald-600 focus:ring-emerald-600/30'
+                                ? 'border-red-400 bg-red-100/30 focus:border-red-500 focus:ring-red-500/30 text-red-900'
+                                : 'border-emerald-500 bg-emerald-50/10 focus:border-emerald-600 focus:ring-emerald-600/30'
                           }`}
                         />
                         {clientNameTouched && getClientNameError(clientName) && (
@@ -5084,19 +5223,19 @@ export default function App() {
                               setClientPhone(e.target.value);
                               if (!clientPhoneTouched) setClientPhoneTouched(true);
                             }}
-                            placeholder={lang === 'ar' ? 'مثلاً: 0501234567' : 'e.g. 0501234567'} 
-                            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-1 font-mono shadow-sm text-sm transition-all duration-150 ${
+                            placeholder={lang === 'ar' ? 'مثال: 0501234567 أو +966501234567' : 'e.g. +966501234567 or 0501234567'} 
+                            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-1 font-mono shadow-sm text-sm transition-all duration-150 text-slate-900 font-semibold bg-white placeholder-slate-400 ${
                               !clientPhoneTouched 
                                 ? 'border-slate-300 focus:border-amber-500 focus:ring-amber-500/30'
                                 : getClientPhoneError(clientPhone)
-                                  ? 'border-red-400 bg-red-50/10 focus:border-red-500 focus:ring-red-500/30 text-red-900'
-                                  : 'border-emerald-500 bg-emerald-50/5 focus:border-emerald-600 focus:ring-emerald-600/30'
+                                  ? 'border-red-400 bg-red-100/30 focus:border-red-500 focus:ring-red-500/30 text-red-900'
+                                  : 'border-emerald-500 bg-emerald-50/10 focus:border-emerald-600 focus:ring-emerald-600/30'
                             }`}
                           />
                           {clientPhoneTouched && getClientPhoneError(clientPhone) && (
                             <p className="text-[11px] text-red-600 font-bold mt-1.5 flex items-start gap-1 p-2 bg-red-50/50 rounded-lg border border-red-150 animate-fade-in transition-all">
                               <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
-                              <span>{lang === 'ar' ? getClientPhoneError(clientPhone) : 'Phone must match SA format e.g., 05xxxxxxx'}</span>
+                              <span>{lang === 'ar' ? getClientPhoneError(clientPhone) : 'Invalid phone format; please enter a valid mobile number with country code.'}</span>
                             </p>
                           )}
                         </div>
@@ -5124,12 +5263,12 @@ export default function App() {
                               setSelectedServiceId(e.target.value);
                               setSelectedServiceTouched(true);
                             }}
-                            className={`w-full p-3 border rounded-lg bg-white focus:outline-none focus:ring-1 shadow-sm text-sm font-sans transition-all duration-150 ${
+                            className={`w-full p-3 border rounded-lg bg-white focus:outline-none focus:ring-1 shadow-sm text-sm font-sans transition-all duration-150 text-slate-900 font-semibold ${
                               !selectedServiceTouched 
                                 ? 'border-slate-300 focus:border-amber-500 focus:ring-amber-500/30'
                                 : getSelectedServiceError(selectedServiceId)
-                                  ? 'border-red-400 bg-red-50/10 focus:border-red-500 focus:ring-red-500/30 text-red-900'
-                                  : 'border-emerald-500 bg-emerald-50/5 focus:border-emerald-600 focus:ring-emerald-600/30'
+                                  ? 'border-red-400 bg-red-100/30 focus:border-red-500 focus:ring-red-500/30 text-red-900'
+                                  : 'border-emerald-500 bg-emerald-50/10 focus:border-emerald-600 focus:ring-emerald-600/30'
                             }`}
                           >
                             <option value="">{lang === 'ar' ? 'اختر الخدمة الإجرائية...' : 'Choose requested service...'}</option>
@@ -5187,7 +5326,7 @@ export default function App() {
                         value={clientNotes}
                         onChange={(e) => setClientNotes(e.target.value)}
                         placeholder={lang === 'ar' ? 'دون هنا تفاصيل الطلب الإضافية مثل أعداد الأفراد، الجهة المقصودة للتأشيرة، أي تعليمات خاصة بالإدارة الحكومية...' : 'Write additional request details such as number of individuals, specific government instructions, or visa notes...'}
-                        className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 h-28 font-sans shadow-sm text-sm text-right"
+                        className="w-full p-3 border border-slate-300 rounded-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 h-28 font-sans shadow-sm text-sm text-right text-slate-900 font-semibold bg-white placeholder-slate-400"
                       ></textarea>
                     </div>
 
@@ -5235,7 +5374,7 @@ export default function App() {
                                 <span className="text-[10px] font-bold text-slate-400 font-mono">#{idx + 1}</span>
                                 <FileText className="w-5 h-5 text-emerald-600 flex-shrink-0" />
                                 <div className="text-right">
-                                  <p className="font-bold text-slate-850 line-clamp-1 max-w-[200px] sm:max-w-xs">{file.name}</p>
+                                  <p className="font-bold text-slate-800 line-clamp-1 max-w-[200px] sm:max-w-xs">{file.name}</p>
                                   <p className="text-[10px] text-slate-500 font-mono">{file.size}</p>
                                 </div>
                               </div>
@@ -5309,8 +5448,8 @@ export default function App() {
                       setSearchPhone(e.target.value);
                       setHasSearched(false);
                     }}
-                    placeholder={lang === 'ar' ? 'مثال رقم الجوال: 0501234567' : 'e.g. Mobile number: 0501234567'}
-                    className="flex-1 p-3 border-2 border-slate-300 rounded focus:outline-none focus:border-slate-800 font-mono text-sm"
+                    placeholder={lang === 'ar' ? 'مثال رقم الجوال: 0501234567 أو +96650...' : 'e.g. Mobile number: +9665...' }
+                    className="flex-1 p-3 border-2 border-slate-300 rounded focus:outline-none focus:border-slate-800 font-mono text-sm text-slate-900 font-bold bg-white placeholder-slate-400"
                   />
                   <button
                     type="submit"
@@ -5395,6 +5534,78 @@ export default function App() {
                                 {b.status === 'cancelled' && (statusMsgCancelled || 'ملغية - نرجو التواصل مع الإدارة للاستفسار والتحقق.')}
                               </p>
                             </div>
+
+                            {/* Client Editable / Trackable Request Notes Section */}
+                            <div className="mb-4 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-2 text-right shadow-3xs" dir="rtl">
+                              <div className="flex justify-between items-center">
+                                <span className="text-[11px] font-black text-slate-500 block">
+                                  {lang === 'ar' ? 'ملاحظات وتوضيحات المعاملة (للعميل):' : 'Transaction Clarifications (Client):'}
+                                </span>
+                                {b.status === 'pending' && editingNotesId !== b.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setEditingNotesId(b.id);
+                                      setEditingNotesValue(b.notes || '');
+                                    }}
+                                    className="text-[10px] font-black text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-250 px-2.5 py-1 rounded-lg transition flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <span>✍️ {lang === 'ar' ? 'تعديل أو إضافة إيضاح' : 'Edit clarification'}</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              {editingNotesId === b.id ? (
+                                <div className="space-y-2 animate-fade-in">
+                                  <textarea
+                                    value={editingNotesValue}
+                                    onChange={(e) => setEditingNotesValue(e.target.value)}
+                                    placeholder={lang === 'ar' ? 'اكتب ملاحظاتك وتفاصيلك الإضافية هنا بدقة لكي يراها موظف المعاملة...' : 'Write additional notes or instructions for the agent...'}
+                                    className="w-full min-h-[75px] max-h-[150px] p-2.5 text-xs text-slate-900 font-semibold bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-amber-500 font-sans leading-relaxed placeholder-slate-400"
+                                  />
+                                  <div className="flex justify-end gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setEditingNotesId(null);
+                                        setEditingNotesValue('');
+                                      }}
+                                      className="text-[10.5px] font-bold text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                                    >
+                                      {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateBookingNotes(b.id)}
+                                      className="text-[10.5px] font-extrabold text-white bg-slate-950 hover:bg-slate-850 border border-slate-900 px-3.5 py-1.5 rounded-lg shadow-sm transition cursor-pointer flex items-center gap-1"
+                                    >
+                                      <span>💾 {lang === 'ar' ? 'حفظ وتحديث الطلب' : 'Save & Update'}</span>
+                                    </button>
+                                  </div>
+                                  <p className="text-[9.5px] text-slate-400 font-sans italic">
+                                    {lang === 'ar' 
+                                      ? '* يمكنك التعديل لتفادي مراجعتنا هاتفياً لأن المعاملة لازالت قيد الانتظار لمراجعة الإدارة.' 
+                                      : '* You can update your notes as the request is currently pending administrative review.'}
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="bg-white/80 p-2.5 rounded-lg border border-slate-150/60 font-sans">
+                                  <p className="text-slate-800 font-medium text-xs whitespace-pre-wrap leading-relaxed">
+                                    {b.notes ? b.notes.trim() : (lang === 'ar' ? 'لا توجد ملاحظات إضافية مسجلة.' : 'No notes or directions specified.')}
+                                  </p>
+                                  {b.status !== 'pending' && (
+                                    <div className="mt-1.5 flex items-center gap-1 text-[9.5px] text-slate-400">
+                                      <Lock className="w-3 h-3 text-slate-400" />
+                                      <span>
+                                        {lang === 'ar' 
+                                          ? 'تم قفل تعديل الملاحظات لأن المعاملة تحت المعالجة الإجرائية والعمل الدؤوب عليها.' 
+                                          : 'Editing locked because request processing has already commenced.'}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                             
                             {/* Global Payment Status Panel */}
                             {(() => {
@@ -5410,7 +5621,7 @@ export default function App() {
                                     </div>
                                     <p className="text-[10px] text-slate-600 font-sans">
                                       {lang === 'ar' ? 'بلد السداد:' : 'Payment Location:'} <strong className="text-slate-900">{b.paymentCountry || (lang === 'ar' ? "سداد دولي موثق" : "Verified Int'l Payment")}</strong> • 
-                                      {lang === 'ar' ? 'المرجع البنكي:' : 'Reference ID:'} <span className="font-mono text-slate-850">{b.paymentRef}</span> • 
+                                      {lang === 'ar' ? 'المرجع البنكي:' : 'Reference ID:'} <span className="font-mono text-slate-800">{b.paymentRef}</span> • 
                                       {lang === 'ar' ? 'البوابة المعتمدة:' : 'Approved Gateway:'} <strong className="text-slate-900">{b.paymentMethod || (lang === 'ar' ? "بطاقة ائتمانية" : "Credit Card")}</strong>
                                     </p>
                                   </div>
@@ -5418,7 +5629,7 @@ export default function App() {
                               }
 
                               return (
-                                <div className="bg-amber-500/5 border border-amber-250 p-3.5 rounded-xl text-slate-850 text-xs mb-4 font-sans space-y-2">
+                                <div className="bg-amber-500/5 border border-amber-200 p-3.5 rounded-xl text-slate-800 text-xs mb-4 font-sans space-y-2">
                                   <div className="flex justify-between items-center">
                                     <span className="text-slate-500 flex items-center gap-1 font-bold">
                                       <Coins className="w-3.5 h-3.5 text-amber-600" />
@@ -5845,7 +6056,7 @@ export default function App() {
                           required
                           value={applyApplicantPhone}
                           onChange={(e) => setApplyApplicantPhone(e.target.value)}
-                          placeholder="مثال: 0501234567"
+                          placeholder="مثال: +966501234567 أو 0501234567"
                           className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-[11px] text-white font-mono focus:outline-none focus:border-amber-500 placeholder:text-slate-600"
                         />
                       </div>
@@ -6674,7 +6885,7 @@ export default function App() {
                           value={txClientName}
                           onChange={(e) => setTxClientName(e.target.value)}
                           placeholder="مثلاً: شركة النخبة المحدودة"
-                          className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-sans"
+                          className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-sans text-slate-900 font-semibold bg-white placeholder-slate-400"
                         />
                       </div>
 
@@ -6684,7 +6895,7 @@ export default function App() {
                         <select
                           value={txServiceId}
                           onChange={(e) => handleAdminServiceSelectChange(e.target.value)}
-                          className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-none focus:border-slate-800 text-sm font-sans"
+                          className="w-full p-2.5 border border-slate-300 rounded bg-white focus:outline-none focus:border-slate-800 text-sm font-sans text-slate-900 font-semibold"
                         >
                           {services.map(s => (
                             <option key={s.id} value={s.id}>
@@ -6703,7 +6914,7 @@ export default function App() {
                           value={txGovFee}
                           onChange={(e) => setTxGovFee(Number(e.target.value) || 0)}
                           placeholder="0.00"
-                          className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-mono"
+                          className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-mono text-slate-900 font-semibold bg-white placeholder-slate-400"
                         />
                       </div>
 
@@ -6716,7 +6927,7 @@ export default function App() {
                           value={txOfficeFee}
                           onChange={(e) => setTxOfficeFee(Number(e.target.value) || 0)}
                           placeholder="0.00"
-                          className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-mono"
+                          className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-mono text-slate-900 font-semibold bg-white placeholder-slate-400"
                         />
                       </div>
                     </div>
@@ -6729,7 +6940,7 @@ export default function App() {
                         value={txNotes}
                         onChange={(e) => setTxNotes(e.target.value)}
                         placeholder="مثل: المتابعة لإصدار السجل التجاري شامل الترخيص والدفاع المدني بجدة..."
-                        className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-sans"
+                        className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-sans text-slate-900 font-semibold bg-white placeholder-slate-400"
                       />
                     </div>
 
@@ -6867,6 +7078,55 @@ export default function App() {
                               <span>تصدير جماعي 📥</span>
                             </button>
                           </div>
+
+                          {/* Date Range Selection for Excel Export */}
+                          <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-300 rounded-lg p-1 text-slate-900">
+                            <span className="text-[10px] font-bold text-slate-700 font-sans px-1">
+                              {lang === 'ar' ? 'نطاق تاريخ التصدير:' : 'Export Date Period:'}
+                            </span>
+                            <div className="flex items-center gap-1">
+                              <input
+                                type="date"
+                                value={exportStartDate}
+                                onChange={(e) => setExportStartDate(e.target.value)}
+                                className="bg-white border border-slate-200 text-[10px] rounded px-1 text-slate-800 font-mono py-0.5 focus:outline-none focus:border-emerald-500"
+                                title={lang === 'ar' ? 'تاريخ البداية' : 'Start Date'}
+                              />
+                              <span className="text-[10px] text-slate-400 font-sans">
+                                {lang === 'ar' ? 'إلى' : 'to'}
+                              </span>
+                              <input
+                                type="date"
+                                value={exportEndDate}
+                                onChange={(e) => setExportEndDate(e.target.value)}
+                                className="bg-white border border-slate-200 text-[10px] rounded px-1 text-slate-800 font-mono py-0.5 focus:outline-none focus:border-emerald-500"
+                                title={lang === 'ar' ? 'تاريخ النهاية' : 'End Date'}
+                              />
+                            </div>
+                            {(exportStartDate || exportEndDate) && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExportStartDate('');
+                                  setExportEndDate('');
+                                }}
+                                className="text-[9px] hover:text-red-700 text-red-500 font-bold bg-white hover:bg-red-50 border border-slate-250 rounded px-1.5 py-0.5 transition cursor-pointer"
+                                title={lang === 'ar' ? 'إعادة تعيين الفترة' : 'Clear Dates'}
+                              >
+                                {lang === 'ar' ? '✕ مسح' : '✕ Clear'}
+                              </button>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={handleExportTransactionsExcel}
+                            className="bg-emerald-600 hover:bg-emerald-750 text-white font-extrabold px-3.5 py-1.5 rounded-lg text-xs shadow-xs transition duration-150 flex items-center gap-1.5 active:scale-98 cursor-pointer"
+                            title={lang === 'ar' ? 'تصدير قيود الحسابات كملف Excel حقيقي ممتاز XLSX' : 'Export and download Excel XLSX sheet'}
+                          >
+                            <FileSpreadsheet className="w-4 h-4 text-white" />
+                            <span>{lang === 'ar' ? 'تصدير Excel (XLSX)' : 'Export Excel (XLSX)'}</span>
+                          </button>
 
                           <button
                             type="button"
@@ -9269,7 +9529,7 @@ export default function App() {
                           {whatsappLogs.map((log) => (
                             <tr key={log.id} className="hover:bg-slate-50 transition-colors">
                               <td className="p-3 font-sans">
-                                <div className="font-bold text-slate-850 flex items-center gap-1.5 flex-wrap">
+                                <div className="font-bold text-slate-900 flex items-center gap-1.5 flex-wrap">
                                   <Smartphone className="w-3.5 h-3.5 text-slate-400" />
                                   <span>{log.clientName}</span>
                                   {log.id.includes('auto') && (
@@ -9733,10 +9993,10 @@ export default function App() {
                               <th className="p-3">القسم / الموقع</th>
                               <th className="p-3">الراتب / التعاقد</th>
                               <th className="p-3">تاريخ النشر</th>
-                              <th className="p-3 text-center">الإجراءات</th>
+                              <th className="p-3 text-center font-bold">الإجراءات</th>
                             </tr>
                           </thead>
-                          <tbody className="divide-y divide-slate-150 text-slate-850">
+                          <tbody className="divide-y divide-slate-200 text-slate-800">
                             {jobVacancies.length === 0 ? (
                               <tr>
                                 <td colSpan={5} className="p-8 text-center text-slate-400 italic">
