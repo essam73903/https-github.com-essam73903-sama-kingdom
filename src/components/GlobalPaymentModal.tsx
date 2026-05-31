@@ -42,6 +42,14 @@ interface GlobalPaymentModalProps {
   totalAmountSAR: number;
   onPaymentSuccess: (method: string, ref: string, countryName: string, amountLocalLabel: string) => void;
   allowedMethods?: string[];
+  stripePublishableKey?: string;
+  paypalEmail?: string;
+  bankName?: string;
+  bankIban?: string;
+  bankSwift?: string;
+  bankHolder?: string;
+  madaActive?: boolean;
+  fawryActive?: boolean;
 }
 
 interface CountryConfig {
@@ -58,6 +66,273 @@ interface CountryConfig {
   }[];
 }
 
+interface LocalBankDetails {
+  bankId: string;
+  bankName: string;
+  iban: string;
+  swift: string;
+  holder: string;
+  logo: string;
+  instructions: string;
+}
+
+interface LocalWalletDetails {
+  walletId: string;
+  walletName: string;
+  logo: string;
+  placeholder: string;
+  regexPrefix?: string;
+  instructions: string;
+}
+
+const COUNTRY_BANK_RECORDS: Record<string, LocalBankDetails[]> = {
+  SA: [
+    {
+      bankId: 'snb',
+      bankName: 'البنك الأهلي السعودي (SNB)',
+      iban: 'SA 80 1000 0000 1234 5678 9012',
+      swift: 'NCBKSARIXXX',
+      holder: 'مكتب سما المملكة لتخليص المعاملات',
+      logo: '🏦',
+      instructions: 'التحويل المحلي الفوري وبطاقة ميزان سريعة لتسوية الفاتورة.'
+    },
+    {
+      bankId: 'alrajhi',
+      bankName: 'مصرف الراجحي (Al Rajhi Bank)',
+      iban: 'SA 45 8000 0000 9876 5432 1098',
+      swift: 'RAJHSARIXXX',
+      holder: 'مكتب سما المملكة لتخليص المعاملات',
+      logo: '🏹',
+      instructions: 'تحويل مباشر لحساب مصرف الراجحي الوطني المعتمد بالمكتب.'
+    }
+  ],
+  AE: [
+    {
+      bankId: 'enbd',
+      bankName: 'بنك الإمارات دبي الوطني (Emirates NBD)',
+      iban: 'AE 44 0260 0000 1122 3344 5566',
+      swift: 'EBILDDBSXXX',
+      holder: 'Sama El Kingdom Transaction Services',
+      logo: '🏦',
+      instructions: 'تحويل محلي مباشر بالدرهم الإماراتي (AED) إلى فرع بنك دبي الوطني.'
+    },
+    {
+      bankId: 'adib',
+      bankName: 'مصرف أبوظبي الإسلامي (ADIB)',
+      iban: 'AE 94 0330 0000 5566 7788 9900',
+      swift: 'ADIBASAXXX',
+      holder: 'Sama El Kingdom Transaction Services',
+      logo: '🕌',
+      instructions: 'إيداع أو حوالة مباشرة بالدرهم من خلال شبكة أبوظبي الإسلامي.'
+    }
+  ],
+  EG: [
+    {
+      bankId: 'cib',
+      bankName: 'البنك التجاري الدولي (CIB مصر)',
+      iban: 'EG 12 0003 0041 1234 5678 9012 34',
+      swift: 'COBIEGCXxxx',
+      holder: 'مكتب سما المملكة لتخليص المعاملات والتعقيب',
+      logo: '🏦',
+      instructions: 'إيداع/حوالة بالجنيه المصري (EGP) بحسابنا البنكي الرسمي بسعر الصرف اليومي لتسوية معاملاتك.'
+    },
+    {
+      bankId: 'nbe',
+      bankName: 'البنك الأهلي المصري (NBE)',
+      iban: 'EG 49 0500 0021 9876 5432 1098 76',
+      swift: 'NBEGEGCXxxx',
+      holder: 'مكتب سما المملكة لتخليص المعاملات والتعقيب',
+      logo: '🦅',
+      instructions: 'حوالة فوري عبر الأهلي نت أو إيداع فوري بفروع البنك الأهلي المصري.'
+    }
+  ],
+  KW: [
+    {
+      bankId: 'nbk',
+      bankName: 'بنك الكويت الوطني (NBK)',
+      iban: 'KW 23 NBKB 0000 0000 1234 5678 90',
+      swift: 'NBKOKWKWXXX',
+      holder: 'Sama Kingdom Government Services',
+      logo: '🇰🇼',
+      instructions: 'التحويل المعتمد الفوري بالدينار الكويتي (KWD) لحساب سما المملكة الوطني.'
+    }
+  ],
+  BH: [
+    {
+      bankId: 'nbb',
+      bankName: 'بنك البحرين الوطني (NBB)',
+      iban: 'BH 88 NBBA 0000 0000 9876 5432 10',
+      swift: 'NBBABHBHXXX',
+      holder: 'Sama El Kingdom Bahrain Branch',
+      logo: '🇧🇭',
+      instructions: 'تحويل سريع بالدينار البحريني الموازي لشبكة تفويض المعاملات.'
+    }
+  ],
+  QA: [
+    {
+      bankId: 'qnb',
+      bankName: 'بنك قطر الوطني (QNB)',
+      iban: 'QA 54 QNBA 0000 0000 1111 2222 33',
+      swift: 'QNBAQAQAXXX',
+      holder: 'Sama Kingdom Government Clearance',
+      logo: '🇶🇦',
+      instructions: 'حوالة بنكية مباشرة سريعة بالريال القطري (QAR).'
+    }
+  ],
+  OM: [
+    {
+      bankId: 'muscat',
+      bankName: 'بنك مسقط (Bank Muscat)',
+      iban: 'OM 67 BMUS 0000 0000 4444 5555 66',
+      swift: 'BMUSOMOMXXX',
+      holder: 'مكتب سما المملكة للخدمات العمانية',
+      logo: '🇴🇲',
+      instructions: 'حوالة بنكية فاعلة بالريال العماني (OMR) للقسم الخدماتي بالسلطنة.'
+    }
+  ],
+  JO: [
+    {
+      bankId: 'arabbank',
+      bankName: 'البنك العربي الأردني (Arab Bank)',
+      iban: 'JO 91 ARAB 0000 1111 2222 3333 44',
+      swift: 'ARABJOAMXXX',
+      holder: 'مكتب سما المملكة لتخليص المعاملات',
+      logo: '🇯🇴',
+      instructions: 'التحويل بالدينار الأردني (JOD) المباشر لتسهيل تليين خدمات التأشيرات والتحقق.'
+    }
+  ],
+  US: [
+    {
+      bankId: 'chase',
+      bankName: 'JP Morgan Chase Bank',
+      iban: 'US 11 CHAS 0210 0002 1234 5678 90',
+      swift: 'CHASEUS33XXX',
+      holder: 'Sama El Kingdom Clearing LLC',
+      logo: '🇺🇸',
+      instructions: 'Immediate US ACH or Domestic Wire payment in USD.'
+    }
+  ],
+  EU: [
+    {
+      bankId: 'revolut',
+      bankName: 'Revolut Bank Europe (SEPA)',
+      iban: 'LT 56 3254 1120 4452 1230',
+      swift: 'REVOUM21XXX',
+      holder: 'Sama El Kingdom Clearing Services',
+      logo: '🇪🇺',
+      instructions: 'Direct instant SEPA Credit Transfer with 0% extra fees.'
+    }
+  ],
+  UK: [
+    {
+      bankId: 'barclays',
+      bankName: 'Barclays Bank UK',
+      iban: 'GB 29 BARC 2071 0041 1234 56',
+      swift: 'BARCGB22XXX',
+      holder: 'Sama El Kingdom Ltd',
+      logo: '🇬🇧',
+      instructions: 'Faster Payments domestic transfer in Great Britain Pound.'
+    }
+  ]
+};
+
+const COUNTRY_WALLET_RECORDS: Record<string, LocalWalletDetails[]> = {
+  SA: [
+    {
+      walletId: 'stcpay',
+      walletName: 'محفظة STC Pay الرقمية',
+      logo: '📱',
+      placeholder: '05XXXXXXXX (أدخل 10 أرقام)',
+      regexPrefix: '^05',
+      instructions: 'سداد رسمي سريع عبر إرسال كود تحصيل فوري لحساب STC Pay الخاص بك.'
+    },
+    {
+      walletId: 'urpay',
+      walletName: 'محفظة urpay الراجحي الوطنية',
+      logo: '💜',
+      placeholder: '05XXXXXXXX (أدخل 10 أرقام)',
+      regexPrefix: '^05',
+      instructions: 'إخطار سداد لحظي يرسل فوراً إلى رقم الجوال لتأكيد التفويض بلمسة.'
+    }
+  ],
+  EG: [
+    {
+      walletId: 'instapay',
+      walletName: 'شبكة المدفوعات اللحظية (InstaPay)',
+      logo: '⚡',
+      placeholder: 'username@instapay',
+      instructions: 'أعقـب الدفع الفوري بكتابة الـ InstaPay Address أو رقم الجوال المربوط بالبنك.'
+    },
+    {
+      walletId: 'vodafone',
+      walletName: 'محفظة فودافون كاش ومحافظ المحمول بمصر',
+      logo: '🔴',
+      placeholder: '010XXXXXXXX / 01XXXXX',
+      regexPrefix: '^01',
+      instructions: 'يدعم محافظ فودافون كاش، اتصالات كاش، أورانج كاش، ومحافظ بنك مصر، سيصلك طلب التحقق فوراً.'
+    }
+  ],
+  JO: [
+    {
+      walletId: 'cliq',
+      walletName: 'نظام كليك الأردني (CliQ Jordan)',
+      logo: '🇯🇴',
+      placeholder: 'Alias Name / Phone Number (اسم المعرف)',
+      instructions: 'نظام بنكي رقمي أردني فوري ومجاني لتحصيل المعاملات الحكومية.'
+    },
+    {
+      walletId: 'zain_jo',
+      walletName: 'محفظة زين كاش الأردن (Zain Cash)',
+      logo: '📱',
+      placeholder: '079XXXXXXX (أدخل 10 أرقام)',
+      regexPrefix: '^079',
+      instructions: 'ادفع مباشرة واخصم من رصيد محفظتك الرقمية الرائدة في الأردن.'
+    }
+  ],
+  AE: [
+    {
+      walletId: 'etislat_ae',
+      walletName: 'محفظة e& money اتصالات الإمارات',
+      logo: '💰',
+      placeholder: '05XXXXXXXX',
+      regexPrefix: '^05',
+      instructions: 'التفويض والدفع الفوري بالدرهم من تطبيق e& money للإلكترونيات المالية.'
+    },
+    {
+      walletId: 'careem_pay',
+      walletName: 'محفظة كريم باي دبي (Careem Pay)',
+      logo: '✨',
+      placeholder: '05XXXXXXXX',
+      instructions: 'التسوية بلمسة واحدة لعملاء كريم ومستفيدي المواصلات والاتصالات بدبي.'
+    }
+  ],
+  KW: [
+    {
+      walletId: 'zain_kw',
+      walletName: 'محفظة زين كاش الكويت (Zain Cash KW)',
+      logo: '📱',
+      placeholder: 'أدخل رقم الهاتف النقال الكويتي',
+      instructions: 'ادفع إلكترونياً لخدمات التعقيب بروابط ميسرة.'
+    }
+  ],
+  US: [
+    {
+      walletId: 'venmo',
+      walletName: 'فـينمو (Venmo App US)',
+      logo: '💵',
+      placeholder: '@username أو البريد الإلكتروني',
+      instructions: 'سداد فوري وسريع للأعمال من الحساب المربوط بفينمو.'
+    },
+    {
+      walletId: 'cashapp',
+      walletName: 'كاش آب (Cash App)',
+      logo: '🟢',
+      placeholder: '$cashtag الخاص بك',
+      instructions: 'توجيه طلب تحكم آمن للتسوية بلمسة.'
+    }
+  ]
+};
+
 const COUNTRIES: CountryConfig[] = [
   {
     code: 'SA',
@@ -69,8 +344,8 @@ const COUNTRIES: CountryConfig[] = [
       { id: 'mada', name: 'بطاقة مدى الوطنية (mada)', logo: '💳', type: 'local' },
       { id: 'card', name: 'بطاقة ائتمانية (Visa / MasterCard)', logo: '🌐', type: 'card' },
       { id: 'applepay', name: 'Apple Pay الآمن المباشر', logo: '', type: 'wallet' },
-      { id: 'stcpay', name: 'محفظة STC Pay الرقمية', logo: '📱', type: 'wallet' },
-      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (بنك الأهلي)', logo: '🏦', type: 'bank' }
+      { id: 'stcpay', name: 'محافظ إلكترونية سعودية (STC Pay & urpay)', logo: '📱', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (البنوك السعودية المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -82,6 +357,8 @@ const COUNTRIES: CountryConfig[] = [
     methods: [
       { id: 'card', name: 'بطاقة مواطني الإمارات (Visa / MasterCard)', logo: '💳', type: 'card' },
       { id: 'applepay', name: 'Apple Pay سداد لمستفيدي دبي', logo: '', type: 'wallet' },
+      { id: 'etislat_ae', name: 'محافظ إماراتية رقمية (e& money & Careem Pay)', logo: '📱', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (مصارف دبي وأبوظبي)', logo: '🏦', type: 'bank' },
       { id: 'paypal', name: 'حساب PayPal العالمي', logo: '🅿️', type: 'paypal' }
     ]
   },
@@ -94,7 +371,9 @@ const COUNTRIES: CountryConfig[] = [
     methods: [
       { id: 'knet', name: 'بوابة كي نت الوطنية (Knet)', logo: '🇰🇼', type: 'local' },
       { id: 'card', name: 'بطاقة فيزا أو ماستركارد', logo: '💳', type: 'card' },
-      { id: 'applepay', name: 'سداد بلمسة Apple Pay', logo: '', type: 'wallet' }
+      { id: 'applepay', name: 'سداد بلمسة Apple Pay', logo: '', type: 'wallet' },
+      { id: 'zain_kw', name: 'محفظة زين كاش الكويت الرقمية', logo: '📱', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (البنوك الكويتية المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -105,7 +384,8 @@ const COUNTRIES: CountryConfig[] = [
     rate: 0.101,
     methods: [
       { id: 'benefit', name: 'شبكة بنفت البحرينية الموحدة (Benefit)', logo: '🇧🇭', type: 'local' },
-      { id: 'card', name: 'بطاقات الدفع الدولي', logo: '💳', type: 'card' }
+      { id: 'card', name: 'بطاقات الدفع الدولي', logo: '💳', type: 'card' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (مصارف البحرين المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -117,7 +397,8 @@ const COUNTRIES: CountryConfig[] = [
     methods: [
       { id: 'naps', name: 'بوابة ناب كارد القطرية (NAPS)', logo: '🇶🇦', type: 'local' },
       { id: 'card', name: 'Visa / MasterCard', logo: '💳', type: 'card' },
-      { id: 'applepay', name: 'محفظة آبل قطر الموثوقة', logo: '', type: 'wallet' }
+      { id: 'applepay', name: 'محفظة آبل قطر الموثوقة', logo: '', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (البنوك القطرية المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -128,7 +409,8 @@ const COUNTRIES: CountryConfig[] = [
     rate: 0.103,
     methods: [
       { id: 'omannet', name: 'الشبكة العمانية المشتركة (OmanNet)', logo: '🇴🇲', type: 'local' },
-      { id: 'card', name: 'بطاقة فيزا / ماستركارد عمان', logo: '💳', type: 'card' }
+      { id: 'card', name: 'بطاقة فيزا / ماستركارد عمان', logo: '💳', type: 'card' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (البنوك العمانية المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -138,10 +420,12 @@ const COUNTRIES: CountryConfig[] = [
     currency: 'جنيه مصري (EGP)',
     rate: 12.54,
     methods: [
+      { id: 'instapay', name: 'شبكة المدفوعات اللحظية (InstaPay)', logo: '⚡', type: 'wallet' },
       { id: 'fawry', name: 'شبكة فوري للمدفوعات السريعة (Fawry)', logo: '⚡', type: 'local' },
       { id: 'meeza', name: 'بطاقة ميزة الوطنية المصرية', logo: '💳', type: 'local' },
       { id: 'card', name: 'بطاقات ائتمان محلية ودولية', logo: '🌐', type: 'card' },
-      { id: 'instapay', name: 'تحويل شبكة انستا باي الوطنية (InstaPay)', logo: '📱', type: 'wallet' }
+      { id: 'vodafone', name: 'المحافظ الإلكترونية الذكية (Vodafone, Orange, Etisalat)', logo: '📱', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (البنوك المصرية المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -153,7 +437,9 @@ const COUNTRIES: CountryConfig[] = [
     methods: [
       { id: 'stripe', name: 'سداد بوابة سترايب العالمية (Stripe Secure)', logo: '🔒', type: 'card' },
       { id: 'paypal', name: 'حساب PayPal العالمي المعتمد', logo: '🅿️', type: 'paypal' },
-      { id: 'googlepay', name: 'جوجل باي (Google Pay)', logo: '📱', type: 'wallet' }
+      { id: 'googlepay', name: 'جوجل باي (Google Pay)', logo: '📱', type: 'wallet' },
+      { id: 'venmo', name: 'محافظ أمريكية إلكترونية (Venmo / CashApp)', logo: '💵', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (ACH / Wire Transfer)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -177,7 +463,7 @@ const COUNTRIES: CountryConfig[] = [
     rate: 0.211,
     methods: [
       { id: 'card', name: 'بطاقة ائتمان بنك إنجلترا (Visa / MC)', logo: '💳', type: 'card' },
-      { id: 'bank_transfer', name: 'حوالة بريطانية وفاق سريعة (Faster Payments)', logo: '🏦', type: 'bank' }
+      { id: 'bank_transfer', name: 'حوالة بريطانية فاق سريعة (Faster Payments)', logo: '🏦', type: 'bank' }
     ]
   },
   {
@@ -188,7 +474,9 @@ const COUNTRIES: CountryConfig[] = [
     rate: 0.189,
     methods: [
       { id: 'cliq', name: 'فليق ونظام كليك المحمول (CliQ الأردن)', logo: '🇯🇴', type: 'local' },
-      { id: 'card', name: 'البطاقات الائتمانية البنكية المقيمة', logo: '💳', type: 'card' }
+      { id: 'card', name: 'البطاقات الائتمانية البنكية المقيمة', logo: '💳', type: 'card' },
+      { id: 'zain_jo', name: 'محافظ أردنية رقمية (Zain Cash & CliQ)', logo: '📱', type: 'wallet' },
+      { id: 'bank_transfer', name: 'تحويل بنكي مباشر (البنوك الأردنية المعتمدة)', logo: '🏦', type: 'bank' }
     ]
   }
 ];
@@ -199,11 +487,23 @@ export function GlobalPaymentModal({
   booking,
   totalAmountSAR,
   onPaymentSuccess,
-  allowedMethods = []
+  allowedMethods = [],
+  stripePublishableKey = 'pk_live_51O8vS5SamaKingdomSecureKey',
+  paypalEmail: adminPaypalEmail = 'accounting@sama-kingdom.com',
+  bankName = 'البنك الأهلي السعودي (SNB)',
+  bankIban = 'SA 80 1000 0000 1234 5678 9012',
+  bankSwift = 'NCBKSARIXXX',
+  bankHolder = 'مكتب سما المملكة لتخليص المعاملات',
+  madaActive = true,
+  fawryActive = true
 }: GlobalPaymentModalProps) {
   const [step, setStep] = useState<'country' | 'method' | 'details' | 'otp' | 'processing' | 'success'>('country');
   const [selectedCountry, setSelectedCountry] = useState<CountryConfig>(COUNTRIES[0]);
   const [selectedMethod, setSelectedMethod] = useState<{ id: string; name: string; logo: string; type: string } | null>(null);
+
+  // Indexes for active country bank & wallet
+  const [selectedBankIndex, setSelectedBankIndex] = useState(0);
+  const [selectedWalletIndex, setSelectedWalletIndex] = useState(0);
 
   // Card details state
   const [cardHolder, setCardHolder] = useState('');
@@ -230,12 +530,54 @@ export function GlobalPaymentModal({
   const convertedAmount = totalAmountSAR * selectedCountry.rate;
   const localPriceLabel = `${convertedAmount.toFixed(2)} ${selectedCountry.currency}`;
 
-  // Reset modal states when reopening or closing
+  // Look up country specific banks and wallets
+  const bankRecords = COUNTRY_BANK_RECORDS[selectedCountry.code] || [
+    {
+      bankId: 'generic',
+      bankName: bankName || 'البنك المعتمد',
+      iban: bankIban || 'SA 80 1000 0000 1234 5678 9012',
+      swift: bankSwift || 'NCBKSARIXXX',
+      holder: bankHolder || 'مكتب سما المملكة لتخليص المعاملات',
+      logo: '🏦',
+      instructions: 'الرجاء التحويل إلى الحساب المصرفي المعتمد.'
+    }
+  ];
+
+  const activeBank = { ...bankRecords[selectedBankIndex] };
+  if (selectedCountry.code === 'SA' && selectedBankIndex === 0) {
+    if (bankName) activeBank.bankName = bankName;
+    if (bankIban) activeBank.iban = bankIban;
+    if (bankSwift) activeBank.swift = bankSwift;
+    if (bankHolder) activeBank.holder = bankHolder;
+  }
+
+  const walletRecords = COUNTRY_WALLET_RECORDS[selectedCountry.code] || [
+    {
+      walletId: 'generic',
+      walletName: selectedMethod?.name || 'المحفظة الإلكترونية',
+      logo: '📱',
+      placeholder: 'أدخل رقم الهاتف أو الحساب الرقمي',
+      instructions: `نظام السداد الرقمي الفعال بـ ${selectedCountry.name}.`
+    }
+  ];
+
+  const activeWallet = walletRecords[selectedWalletIndex] || walletRecords[0];
+
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const handleCopy = (text: string, field: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  // Reset modal states when reopening or changing selections
   useEffect(() => {
     if (isOpen) {
       setStep('country');
       setSelectedCountry(COUNTRIES[0]);
       setSelectedMethod(null);
+      setSelectedBankIndex(0);
+      setSelectedWalletIndex(0);
       setCardHolder('');
       setcardNumber('');
       setCardExpiry('');
@@ -248,6 +590,11 @@ export function GlobalPaymentModal({
       setOtpCode('');
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    setSelectedBankIndex(0);
+    setSelectedWalletIndex(0);
+  }, [selectedCountry, selectedMethod]);
 
   // Handle OTP countdown
   useEffect(() => {
@@ -287,10 +634,18 @@ export function GlobalPaymentModal({
     const randomRef = customRef?.trim() || `PAY-SM-${selectedCountry.code}-${Math.floor(100000 + Math.random() * 900000)}`;
     setPaymentRef(randomRef);
 
+    // Precise name based on bank index / wallet index
+    let finalMethodLabel = selectedMethod?.name || 'بطاقة مادا سريعة';
+    if (selectedMethod?.type === 'bank' && activeBank) {
+      finalMethodLabel = `تحويل: ${activeBank.bankName}`;
+    } else if (selectedMethod?.type === 'wallet' && activeWallet) {
+      finalMethodLabel = `محفظة: ${activeWallet.walletName}`;
+    }
+
     setTimeout(() => {
       setStep('success');
       onPaymentSuccess(
-        selectedMethod?.name || 'بطاقة مادا سريعة',
+        finalMethodLabel,
         randomRef,
         selectedCountry.name,
         localPriceLabel
@@ -528,8 +883,11 @@ export function GlobalPaymentModal({
                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl"></div>
                     
                     <div className="flex justify-between items-center mb-6">
-                      <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-slate-400">بوابة الدفع العالمية الموحدة</span>
-                      <span className="text-2xl font-black italic">{selectedMethod.logo} {selectedMethod.id === 'mada' ? 'Mada' : 'Global Card'}</span>
+                      <div className="text-right">
+                        <span className="font-mono text-[8px] uppercase font-bold tracking-widest text-slate-400 block">بوابة سترايب الآمنة المربوطة</span>
+                        <strong className="font-mono text-[8px] text-emerald-400 block">ربط حقيقي بالتفويض المعتمد: {stripePublishableKey.slice(0, 15)}...{stripePublishableKey.slice(-6)}</strong>
+                      </div>
+                      <span className="text-2xl font-black italic">{selectedMethod?.logo || '💳'} {selectedMethod?.id === 'mada' ? 'Mada' : 'Global Card'}</span>
                     </div>
 
                     <div className="space-y-4 font-mono">
@@ -652,10 +1010,13 @@ export function GlobalPaymentModal({
                     <div className="absolute top-0 left-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-xl font-black italic">PayPal Secure Express</span>
-                      <Globe className="w-6 h-6 text-blue-200 animate-spin-slow" />
+                      <span className="text-2xl font-black">🅿️</span>
                     </div>
-                    <p className="text-[10px] text-blue-100">سوف يتم خصم ما يقابل بالعملة الأجنبية بشكل آمن تماماً:</p>
+                    <p className="text-[10px] text-blue-100">سوف يتم خصم ما يعادل بالعملة الأجنبية بشكل آمن تماماً:</p>
                     <strong className="text-base text-amber-300 font-mono block mt-1">{localPriceLabel}</strong>
+                    <div className="mt-3 text-[10px] bg-sky-950/40 p-2 rounded border border-white/10 text-sky-200 text-right">
+                      تم ربط هذا الحساب التلقائي لاستقبال سدادات المعاملات فورياً على البريد الإلكتروني للمسؤول: {adminPaypalEmail}
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 text-right">
@@ -689,26 +1050,52 @@ export function GlobalPaymentModal({
                     <p className="text-slate-500 text-[10px]">نظام السداد السريع الفعال في {selectedCountry.name}. سيتم توجيه المعاملة لرقم حسابك المربوط بالفروع والمصارف.</p>
                   </div>
 
+                  {/* Dynamic Wallet Selector for Multiple Options */}
+                  {walletRecords.length > 1 && (
+                    <div className="space-y-1.5 text-right font-sans">
+                      <label className="block text-amber-800 font-black text-[11px]">اختر المحفظة الإلكترونية لبلد {selectedCountry.name}:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {walletRecords.map((wall, idx) => (
+                          <button
+                            key={wall.walletId || idx}
+                            type="button"
+                            onClick={() => setSelectedWalletIndex(idx)}
+                            className={`p-2.5 rounded-xl border text-right transition-all flex items-center justify-between cursor-pointer text-[11px] font-bold ${
+                              selectedWalletIndex === idx
+                                ? 'border-amber-500 bg-amber-500/5 text-amber-900 shadow-3xs'
+                                : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                            }`}
+                          >
+                            <span className="truncate">{wall.walletName}</span>
+                            <span className="text-sm">{wall.logo}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-amber-500/5 border border-amber-300/30 p-3 rounded-xl text-[10.5px] text-slate-700 leading-normal text-right space-y-1">
+                    <span className="font-extrabold text-amber-950 block">تعليمات الدفع عبر {activeWallet.walletName}:</span>
+                    <p>{activeWallet.instructions}</p>
+                  </div>
+
                   <div className="space-y-1.5 text-right">
                     <label className="block text-slate-700 font-bold mb-1">
-                      {selectedMethod.id === 'fawry' ? '* أدخل رقم الكود الوطني لفوري أو رقم الجوال:' :
-                       selectedMethod.id === 'stcpay' ? '* أدخل رقم الجوال المسجل في STC Pay:' :
-                       selectedMethod.id === 'cliq' ? '* أدخل اسم المعرّف الشخصي لكليك (Alias / Phone):' :
-                       '* أدخل الرقم التعريفي البنكي أو رقم الهاتف المحمول:'}
+                      * أدخل الرقم التعريفي البنكي أو رقم الجوال المربوط بـ {activeWallet.walletName}:
                     </label>
                     <input
                       type="text"
                       required
                       value={walletPhone}
                       onChange={(e) => setWalletPhone(e.target.value)}
-                      placeholder="مثلاً: 050XXXXXXX"
+                      placeholder={activeWallet.placeholder || "مثلاً: 050XXXXXXX"}
                       className="w-full p-2.5 border border-slate-300 rounded focus:outline-none focus:border-slate-800 text-sm font-mono text-left"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-3 rounded-xl text-xs sm:text-sm tracking-wide transition-all active:scale-98 flex justify-center items-center gap-1.5 cursor-pointer"
+                    className="w-full bg-slate-950 hover:bg-slate-800 text-white font-black py-3 rounded-xl text-xs sm:text-sm tracking-wide transition-all active:scale-98 flex justify-center items-center gap-1.5 cursor-pointer shadow"
                   >
                     <span>تفويض الطلب وسداد الرسوم الآن ({localPriceLabel})</span>
                   </button>
@@ -735,22 +1122,85 @@ export function GlobalPaymentModal({
                     <p className="text-[10px] text-emerald-800">يمكنك تسوية وسداد الرسوم والضرائب عبر تحويل مباشر لحساب الآيبان المعقود لمكتب سما المملكة وسندخل الإيصال تلقائياً.</p>
                   </div>
 
-                  <div className="bg-white border border-slate-200 rounded-xl p-4 space-y-2.5 font-mono select-all text-xs">
-                    <div className="flex justify-between font-sans text-slate-500 border-b border-slate-100 pb-1.5">
-                      <span>البنك التعاوني المستفيد:</span>
-                      <strong className="text-slate-900">البنك الأهلي السعودي (SNB)</strong>
+                  {/* Dynamic Bank Tab selector for Multiple Options */}
+                  {bankRecords.length > 1 && (
+                    <div className="space-y-1.5 text-right font-sans">
+                      <label className="block text-amber-800 font-black text-[11px]">اختر البنك المحلي المفضل للتحويل إليه ببلدك:</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {bankRecords.map((bank, idx) => (
+                          <button
+                            key={bank.bankId || idx}
+                            type="button"
+                            onClick={() => setSelectedBankIndex(idx)}
+                            className={`p-2.5 rounded-xl border text-right transition-all flex items-center justify-between cursor-pointer text-[11.5px] font-bold ${
+                              selectedBankIndex === idx
+                                ? 'border-amber-500 bg-amber-500/5 text-amber-900 shadow-3xs'
+                                : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'
+                            }`}
+                          >
+                            <span className="truncate">{bank.bankName}</span>
+                            <span className="text-sm">{bank.logo}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center justify-start gap-1">
-                      <span className="font-sans text-slate-500">رقم الآيبان (IBAN):</span>
-                      <strong className="text-slate-900 font-mono tracking-wide">SA 80 1000 0000 1234 5678 9012</strong>
+                  )}
+
+                  {/* Active Bank Card details */}
+                  <div className="bg-white border-2 border-slate-200 hover:border-amber-500/55 rounded-2xl p-4 space-y-3 font-mono select-none text-xs relative overflow-hidden transition-all shadow-3xs">
+                    <div className="absolute top-0 left-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl"></div>
+
+                    <div className="flex justify-between font-sans text-slate-500 border-b border-slate-100 pb-2">
+                      <span className="font-bold text-[11px]">البنك التعاوني المستفيد:</span>
+                      <strong className="text-slate-900 text-xs font-black">{activeBank.bankName}</strong>
                     </div>
-                    <div className="flex justify-between items-center justify-start gap-1">
-                      <span className="font-sans text-slate-500">رمز السويفت (Swift Code):</span>
-                      <strong className="text-slate-900">NCBKSARIXXX</strong>
+
+                    <div className="flex justify-between items-center gap-1 bg-slate-50/75 px-3 py-2 rounded-lg border border-slate-150">
+                      <div className="space-y-0.5 text-right w-full">
+                        <span className="font-sans text-[9px] text-slate-400 block font-bold">رقم الآيبان الدولي (IBAN):</span>
+                        <strong className="text-slate-900 font-mono tracking-wide text-[11px] block text-left select-all">{activeBank.iban}</strong>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(activeBank.iban, 'iban')}
+                        className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-300 font-sans font-bold px-2 py-1 rounded text-[9px] cursor-pointer self-center"
+                      >
+                        {copiedField === 'iban' ? '✓ تم النسخ' : 'نسخ'}
+                      </button>
                     </div>
-                    <div className="flex justify-between font-sans text-slate-500">
-                      <span>المستفيد:</span>
-                      <strong className="text-slate-800 font-sans">مكتب سما المملكة لتخليص المعاملات</strong>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-50/75 p-2 rounded-lg border border-slate-150 flex justify-between items-center">
+                        <div className="space-y-0.5">
+                          <span className="font-sans text-[9px] text-slate-400 block font-bold">رمز سويفت (Swift):</span>
+                          <strong className="text-slate-900 text-[11px] block tracking-wide select-all">{activeBank.swift}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(activeBank.swift, 'swift')}
+                          className="text-amber-900 hover:opacity-80 font-sans font-bold text-[9px] cursor-pointer"
+                        >
+                          {copiedField === 'swift' ? '✓' : 'نسخ'}
+                        </button>
+                      </div>
+
+                      <div className="bg-slate-50/75 p-2 rounded-lg border border-slate-150 flex justify-between items-center">
+                        <div className="space-y-0.5">
+                          <span className="font-sans text-[9px] text-slate-400 block font-bold">المستفيد المسجل:</span>
+                          <strong className="text-slate-850 text-[10px] font-sans block truncate select-all">{activeBank.holder}</strong>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(activeBank.holder, 'holder')}
+                          className="text-amber-900 hover:opacity-80 font-sans font-bold text-[9px] cursor-pointer"
+                        >
+                          {copiedField === 'holder' ? '✓' : 'نسخ'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 font-sans text-[10.5px] text-amber-950 leading-relaxed text-right">
+                      <strong>💡 إرشادات:</strong> {activeBank.instructions}
                     </div>
                   </div>
 

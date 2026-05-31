@@ -25,6 +25,7 @@ export interface BookingRequest {
   isArchived?: boolean;
   isPaid?: boolean;
   paidAmount?: number;
+  paymentOption?: 'full' | 'half'; // chosen advance payment condition: full (100%) or half (50%)
   paymentMethod?: string;
   paymentRef?: string;
   paymentCountry?: string;

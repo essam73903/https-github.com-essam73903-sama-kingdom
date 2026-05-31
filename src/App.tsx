@@ -54,6 +54,72 @@ const getWhatsAppCredential = (key: string, envVal: string | undefined): string 
   return envVal || '';
 };
 
+export interface CountryConfig {
+  code: string;
+  nameAr: string;
+  nameEn: string;
+  phoneCode: string;
+  flag: string;
+  currencyAr: string;
+  currencyEn: string;
+  currencySymbol: string;
+  exchangeRateToSAR: number;
+}
+
+export const MIDDLE_EAST_COUNTRIES: CountryConfig[] = [
+  // --- GCC & Middle East ---
+  { code: 'SA', nameAr: 'المملكة العربية السعودية', nameEn: 'Saudi Arabia', phoneCode: '966', flag: '🇸🇦', currencyAr: 'ريال سعودي', currencyEn: 'SAR', currencySymbol: 'ر.س', exchangeRateToSAR: 1.0 },
+  { code: 'AE', nameAr: 'الإمارات العربية المتحدة', nameEn: 'United Arab Emirates', phoneCode: '971', flag: '🇦🇪', currencyAr: 'درهم إماراتي', currencyEn: 'AED', currencySymbol: 'د.إ', exchangeRateToSAR: 0.98 },
+  { code: 'QA', nameAr: 'دولة قطر', nameEn: 'Qatar', phoneCode: '974', flag: '🇶🇦', currencyAr: 'ريال قطري', currencyEn: 'QAR', currencySymbol: 'ر.ق', exchangeRateToSAR: 0.97 },
+  { code: 'OM', nameAr: 'سلطنة عُمان', nameEn: 'Oman', phoneCode: '968', flag: '🇴🇲', currencyAr: 'ريال عُماني', currencyEn: 'OMR', currencySymbol: 'ر.ع.', exchangeRateToSAR: 0.10 },
+  { code: 'KW', nameAr: 'دولة الكويت', nameEn: 'Kuwait', phoneCode: '965', flag: '🇰🇼', currencyAr: 'دينار كويتي', currencyEn: 'KWD', currencySymbol: 'د.ك', exchangeRateToSAR: 0.082 },
+  { code: 'BH', nameAr: 'مملكة البحرين', nameEn: 'Bahrain', phoneCode: '973', flag: '🇧🇭', currencyAr: 'دينار بحريني', currencyEn: 'BHD', currencySymbol: 'د.ب', exchangeRateToSAR: 0.10 },
+  { code: 'EG', nameAr: 'جمهورية مصر العربية', nameEn: 'Egypt', phoneCode: '20', flag: '🇪🇬', currencyAr: 'جنيه مصري', currencyEn: 'EGP', currencySymbol: 'ج.م', exchangeRateToSAR: 12.5 },
+  { code: 'JO', nameAr: 'المملكة الأردنية الهاشمية', nameEn: 'Jordan', phoneCode: '962', flag: '🇯🇴', currencyAr: 'دينار أردني', currencyEn: 'JOD', currencySymbol: 'د.أ', exchangeRateToSAR: 0.19 },
+  { code: 'IQ', nameAr: 'جمهورية العراق', nameEn: 'Iraq', phoneCode: '964', flag: '🇮🇶', currencyAr: 'دينار عراقي', currencyEn: 'IQD', currencySymbol: 'د.ع', exchangeRateToSAR: 348.0 },
+  { code: 'LB', nameAr: 'الجمهورية اللبنانية', nameEn: 'Lebanon', phoneCode: '961', flag: '🇱🇧', currencyAr: 'ليرة لبنانية', currencyEn: 'LBP', currencySymbol: 'ل.ل', exchangeRateToSAR: 23800.0 },
+  { code: 'SY', nameAr: 'الجمهورية العربية السورية', nameEn: 'Syria', phoneCode: '963', flag: '🇸🇾', currencyAr: 'ليرة سورية', currencyEn: 'SYP', currencySymbol: 'ل.س', exchangeRateToSAR: 3460.0 },
+  { code: 'YE', nameAr: 'الجمهورية اليمنية', nameEn: 'Yemen', phoneCode: '967', flag: '🇾🇪', currencyAr: 'ريال يمني', currencyEn: 'YER', currencySymbol: 'ر.ي', exchangeRateToSAR: 66.7 },
+  { code: 'PS', nameAr: 'دولة فلسطين', nameEn: 'Palestine', phoneCode: '970', flag: '🇵🇸', currencyAr: 'شيكل فلسطيني', currencyEn: 'ILS', currencySymbol: '₪', exchangeRateToSAR: 0.98 },
+  
+  // --- North Africa (Arab Countries) ---
+  { code: 'MA', nameAr: 'المملكة المغربية', nameEn: 'Morocco', phoneCode: '212', flag: '🇲🇦', currencyAr: 'درهم مغربي', currencyEn: 'MAD', currencySymbol: 'د.م.', exchangeRateToSAR: 2.68 },
+  { code: 'DZ', nameAr: 'الجمهورية الجزائرية', nameEn: 'Algeria', phoneCode: '213', flag: '🇩🇿', currencyAr: 'دينار جزائري', currencyEn: 'DZD', currencySymbol: 'د.ج', exchangeRateToSAR: 35.8 },
+  { code: 'TN', nameAr: 'الجمهورية التونسية', nameEn: 'Tunisia', phoneCode: '216', flag: '🇹🇳', currencyAr: 'دينار تونسي', currencyEn: 'TND', currencySymbol: 'د.ت', exchangeRateToSAR: 0.83 },
+  { code: 'LY', nameAr: 'دولة ليبيا', nameEn: 'Libya', phoneCode: '218', flag: '🇱🇾', currencyAr: 'دينار ليبي', currencyEn: 'LYD', currencySymbol: 'د.ل', exchangeRateToSAR: 1.29 },
+  { code: 'SD', nameAr: 'جمهورية السودان', nameEn: 'Sudan', phoneCode: '249', flag: '🇸🇩', currencyAr: 'جنيه سوداني', currencyEn: 'SDG', currencySymbol: 'ج.س', exchangeRateToSAR: 160.0 },
+
+  // --- Asia & Neighboring ---
+  { code: 'PK', nameAr: 'جمهورية باكستان الإسلامية', nameEn: 'Pakistan', phoneCode: '92', flag: '🇵🇰', currencyAr: 'روبية باكستانية', currencyEn: 'PKR', currencySymbol: 'ر.ب', exchangeRateToSAR: 74.0 },
+  { code: 'IN', nameAr: 'جمهورية الهند', nameEn: 'India', phoneCode: '91', flag: '🇮🇳', currencyAr: 'روبية هندية', currencyEn: 'INR', currencySymbol: '₹', exchangeRateToSAR: 22.1 },
+  { code: 'BD', nameAr: 'جمهورية بنغلاديش', nameEn: 'Bangladesh', phoneCode: '880', flag: '🇧🇩', currencyAr: 'تاكا بنغلاديشي', currencyEn: 'BDT', currencySymbol: '৳', exchangeRateToSAR: 31.2 },
+  { code: 'TR', nameAr: 'الجمهورية التركية', nameEn: 'Turkey', phoneCode: '90', flag: '🇹🇷', currencyAr: 'ليرة تركية', currencyEn: 'TRY', currencySymbol: '₺', exchangeRateToSAR: 8.6 },
+  { code: 'ID', nameAr: 'جمهورية إندونيسيا', nameEn: 'Indonesia', phoneCode: '62', flag: '🇮🇩', currencyAr: 'روبية إندونيسية', currencyEn: 'IDR', currencySymbol: 'Rp', exchangeRateToSAR: 4250.0 },
+  { code: 'MY', nameAr: 'ماليزيا', nameEn: 'Malaysia', phoneCode: '60', flag: '🇲🇾', currencyAr: 'رينغيت ماليزي', currencyEn: 'MYR', currencySymbol: 'RM', exchangeRateToSAR: 1.25 },
+  { code: 'PH', nameAr: 'جمهورية الفلبين', nameEn: 'Philippines', phoneCode: '63', flag: '🇵🇭', currencyAr: 'بيزو فلبيني', currencyEn: 'PHP', currencySymbol: '₱', exchangeRateToSAR: 15.1 },
+  { code: 'SG', nameAr: 'جمهورية سنغافورة', nameEn: 'Singapore', phoneCode: '65', flag: '🇸🇬', currencyAr: 'دولار سنغافوري', currencyEn: 'SGD', currencySymbol: 'S$', exchangeRateToSAR: 0.36 },
+  { code: 'CN', nameAr: 'جمهورية الصين الشعبية', nameEn: 'China', phoneCode: '86', flag: '🇨🇳', currencyAr: 'يوان صيني', currencyEn: 'CNY', currencySymbol: '¥', exchangeRateToSAR: 1.93 },
+  { code: 'JP', nameAr: 'اليابان', nameEn: 'Japan', phoneCode: '81', flag: '🇯🇵', currencyAr: 'ين ياباني', currencyEn: 'JPY', currencySymbol: '¥', exchangeRateToSAR: 41.5 }
+];
+
+export const formatUniversalMiddleEastPhone = (phone: string, defaultCountryCode: string = '966'): string => {
+  let cleaned = phone.trim().replace(/[\s\-\(\)\+]/g, '');
+  if (cleaned.startsWith('00')) {
+    cleaned = cleaned.substring(2);
+  }
+  const matchedCountry = MIDDLE_EAST_COUNTRIES.find(c => cleaned.startsWith(c.phoneCode));
+  if (matchedCountry) {
+    return cleaned;
+  }
+  if (cleaned.startsWith('0')) {
+    return `${defaultCountryCode}${cleaned.substring(1)}`;
+  }
+  if (cleaned.length >= 7 && cleaned.length <= 10) {
+    return `${defaultCountryCode}${cleaned}`;
+  }
+  return cleaned;
+};
+
 export const AVAILABLE_PAYMENT_METHODS = [
   { id: 'sadad', name: 'سداد للمدفوعات الحكومية', badge: 'سداد 🇸🇦', color: 'bg-teal-50 text-teal-800 border-teal-200 hover:bg-teal-100/50' },
   { id: 'mada', name: 'بطاقة مدى الوطنية', badge: 'مدى 💳', color: 'bg-sky-50 text-sky-800 border-sky-200 hover:bg-sky-100/50' },
@@ -67,17 +133,9 @@ export const AVAILABLE_PAYMENT_METHODS = [
 
 // Real & Mock API integration to send WhatsApp notifications via Twilio, UltraMsg, or a fallback Mock Gateway
 const sendPlaceholderWhatsAppAPI = async (phoneNumber: string, message: string) => {
-  // Normalize recipient number to digits only (cleaning spaces, dashes, parentheses and leading plus/zeros)
-  let formattedPhone = phoneNumber.trim().replace(/[\s\-\(\)\+]/g, '');
-  
-  // Saudi number normalization
-  if (formattedPhone.startsWith('05')) {
-    formattedPhone = `966${formattedPhone.substring(1)}`;
-  } else if (formattedPhone.startsWith('00966')) {
-    formattedPhone = `966${formattedPhone.substring(5)}`;
-  }
-  
-  // E.164 format with plus (needed for Twilio)
+  const savedCountryCode = typeof window !== 'undefined' ? (localStorage.getItem('sm_preferred_country') || 'SA') : 'SA';
+  const matchedCountry = MIDDLE_EAST_COUNTRIES.find(c => c.code === savedCountryCode) || MIDDLE_EAST_COUNTRIES[0];
+  const formattedPhone = formatUniversalMiddleEastPhone(phoneNumber, matchedCountry.phoneCode);
   const e164Phone = `+${formattedPhone}`;
 
   // Retrieve active gateway type and credentials (either from localStorage or import.meta.env fallback)
@@ -345,6 +403,19 @@ export default function App() {
     return (localStorage.getItem('sm_lang') as 'ar' | 'en') || 'ar';
   });
 
+  const [selectedCountry, setSelectedCountry] = useState<CountryConfig>(() => {
+    const saved = localStorage.getItem('sm_preferred_country');
+    return MIDDLE_EAST_COUNTRIES.find(c => c.code === saved) || MIDDLE_EAST_COUNTRIES[0];
+  });
+
+  const handleCountryChange = (countryCode: string) => {
+    const matched = MIDDLE_EAST_COUNTRIES.find(c => c.code === countryCode);
+    if (matched) {
+      setSelectedCountry(matched);
+      localStorage.setItem('sm_preferred_country', countryCode);
+    }
+  };
+
   const handleLangToggle = () => {
     const nextLang = lang === 'ar' ? 'en' : 'ar';
     setLang(nextLang);
@@ -444,6 +515,10 @@ export default function App() {
     }
     return loaded;
   });
+
+  // Client Services Search & Filtering States
+  const [clientServiceCategory, setClientServiceCategory] = useState<string>('all');
+  const [clientServiceSearch, setClientServiceSearch] = useState<string>('');
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
     const saved = localStorage.getItem('sm_transactions');
@@ -582,6 +657,7 @@ export default function App() {
   const [clientPhone, setClientPhone] = useState('');
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [clientNotes, setClientNotes] = useState('');
+  const [paymentCondition, setPaymentCondition] = useState<'full' | 'half'>('full');
   const [submissionFeedback, setSubmissionFeedback] = useState<{ success: boolean; msg: string } | null>(null);
   const [isBookingSubmitting, setIsBookingSubmitting] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -632,8 +708,17 @@ export default function App() {
   const [paymentGatewayFawryActive, setPaymentGatewayFawryActive] = useState(() => localStorage.getItem('sm_fawry_active') !== 'false');
   const [showUSDPrice, setShowUSDPrice] = useState<boolean>(() => localStorage.getItem('sm_show_usd') === 'true');
 
+  const [paymentGatewayBankName, setPaymentGatewayBankName] = useState(() => localStorage.getItem('sm_bank_name') || 'البنك الأهلي السعودي (SNB)');
+  const [paymentGatewayBankIban, setPaymentGatewayBankIban] = useState(() => localStorage.getItem('sm_bank_iban') || 'SA 80 1000 0000 1234 5678 9012');
+  const [paymentGatewayBankSwift, setPaymentGatewayBankSwift] = useState(() => localStorage.getItem('sm_bank_swift') || 'NCBKSARIXXX');
+  const [paymentGatewayBankHolder, setPaymentGatewayBankHolder] = useState(() => localStorage.getItem('sm_bank_holder') || 'مكتب سما المملكة لتخليص المعاملات');
+
   const convertSARtoUSD = (sarAmount: number) => {
     return (sarAmount / 3.75).toFixed(2);
+  };
+
+  const convertSARToCountryCurrency = (sarAmount: number) => {
+    return (sarAmount * selectedCountry.exchangeRateToSAR).toFixed(2);
   };
 
   // Admin Inner-Tab: 'ledger' | 'requests' | 'services' | 'stats' | 'whatsapp' | 'jobs'
@@ -657,6 +742,57 @@ export default function App() {
   const [editingService, setEditingService] = useState<Service | null>(null);
   const [serviceToDeleteCheck, setServiceToDeleteCheck] = useState<Service | null>(null);
   const [showCannotDeleteAlert, setShowCannotDeleteAlert] = useState(false);
+
+  const handleDeleteTransaction = (txId: string) => {
+    if (window.confirm(lang === 'ar' ? 'هل أنت متأكد من رغبتك في حذف هذا القيد المالي نهائياً؟' : 'Are you sure you want to delete this financial ledger transaction?')) {
+      setTransactions(prev => prev.filter(t => t.id !== txId));
+      deleteDoc(doc(db, 'transactions', txId))
+        .then(() => {
+          setBookingToast({
+            show: true,
+            type: 'success',
+            title: 'تم حذف القيد',
+            message: 'تم شطب القيد المحاسبي من السجلات الرسمية بنجاح.'
+          });
+        })
+        .catch(err => handleFirestoreError(err, OperationType.DELETE, `transactions/${txId}`));
+    }
+  };
+
+  const handleDeleteService = (serviceId: string) => {
+    if (services.length <= 1) {
+      setShowCannotDeleteAlert(true);
+      return;
+    }
+    const target = services.find(s => s.id === serviceId);
+    if (target) {
+      setServiceToDeleteCheck(target);
+    }
+  };
+
+  const confirmDeleteService = () => {
+    if (!serviceToDeleteCheck) return;
+    const sId = serviceToDeleteCheck.id;
+    setServices(prev => prev.filter(s => s.id !== sId));
+    setServiceToDeleteCheck(null);
+    deleteDoc(doc(db, 'services', sId))
+      .then(() => {
+        setBookingToast({
+          show: true,
+          type: 'success',
+          title: 'تم حذف الخدمة',
+          message: 'تم إزاحة الخدمة بنجاح من قائمة الخدمات المتاحة للجمهور.'
+        });
+      })
+      .catch(err => handleFirestoreError(err, OperationType.DELETE, `services/${sId}`));
+  };
+
+  const handleAdminAuthSuccess = () => {
+    setIsAdminAuthenticated(true);
+    sessionStorage.setItem('sm_admin_logged', 'true');
+    setShowPasscode(false);
+    setActiveTab('admin');
+  };
 
   // Triggering visual popup on service cards details
   const [infoPopupService, setInfoPopupService] = useState<Service | null>(null);
@@ -1080,12 +1216,56 @@ export default function App() {
       }
     });
 
+    // Real-time synchronization of gateway credentials & settings from Firestore
+    const unsubscribeSettings = onSnapshot(collection(db, 'settings'), (snapshot) => {
+      const payConfig = snapshot.docs.find(d => d.id === 'payments')?.data();
+      if (payConfig) {
+        if (payConfig.stripeKey) {
+          setPaymentGatewayStripeKey(payConfig.stripeKey);
+          localStorage.setItem('sm_stripe_key', payConfig.stripeKey);
+        }
+        if (payConfig.paypalEmail) {
+          setPaymentGatewayPaypalEmail(payConfig.paypalEmail);
+          localStorage.setItem('sm_paypal_email', payConfig.paypalEmail);
+        }
+        if (payConfig.madaActive !== undefined) {
+          setPaymentGatewayMadaActive(payConfig.madaActive);
+          localStorage.setItem('sm_mada_active', String(payConfig.madaActive));
+        }
+        if (payConfig.fawryActive !== undefined) {
+          setPaymentGatewayFawryActive(payConfig.fawryActive);
+          localStorage.setItem('sm_fawry_active', String(payConfig.fawryActive));
+        }
+        if (payConfig.showUSD !== undefined) {
+          setShowUSDPrice(payConfig.showUSD);
+          localStorage.setItem('sm_show_usd', String(payConfig.showUSD));
+        }
+        if (payConfig.bankName) {
+          setPaymentGatewayBankName(payConfig.bankName);
+          localStorage.setItem('sm_bank_name', payConfig.bankName);
+        }
+        if (payConfig.bankIban) {
+          setPaymentGatewayBankIban(payConfig.bankIban);
+          localStorage.setItem('sm_bank_iban', payConfig.bankIban);
+        }
+        if (payConfig.bankSwift) {
+          setPaymentGatewayBankSwift(payConfig.bankSwift);
+          localStorage.setItem('sm_bank_swift', payConfig.bankSwift);
+        }
+        if (payConfig.bankHolder) {
+          setPaymentGatewayBankHolder(payConfig.bankHolder);
+          localStorage.setItem('sm_bank_holder', payConfig.bankHolder);
+        }
+      }
+    });
+
     return () => {
       clearTimeout(timer);
       unsubscribeServices();
       unsubscribeJobs();
       unsubscribeBookings();
       unsubscribeAuth();
+      unsubscribeSettings();
     };
   }, []);
 
@@ -1363,14 +1543,18 @@ export default function App() {
   const getClientPhoneError = (phoneStr: string): string | null => {
     const trimmed = phoneStr.trim();
     if (!trimmed) {
-      return "رقم جوال العميل حقل أساسي ومطلوب لاستقبال إشعارات الـ WhatsApp الفورية.";
+      return lang === 'ar' 
+        ? "رقم جوال العميل حقل أساسي ومطلوب لاستقبال إشعارات الـ WhatsApp الفورية."
+        : "Beneficiary phone number is required to receive instant WhatsApp updates.";
     }
     // Permit any standard global phone format from any country.
     // Cleans spaces, hyphens, and parentheses first.
     const cleanNumbers = trimmed.replace(/[\s\-\(\)]/g, '');
     const internationalPhoneRegex = /^(\+?|00?)\d{7,15}$/;
     if (!internationalPhoneRegex.test(cleanNumbers)) {
-      return "صيغة الهاتف غير صحيحة. يرجى إدخال رقم جوال صحيح يشمل رمز الدولة (مثل: +966501234567 أو 0501234567).";
+      return lang === 'ar'
+        ? `صيغة الهاتف غير صحيحة. يرجى إدخال رقم جوال صحيح يشمل رمز الدولة (مثل: +${selectedCountry.phoneCode}XXXXXXXX).`
+        : `Invalid phone format. Please include your country code (e.g. +${selectedCountry.phoneCode}XXXXXXXX).`;
     }
     return null;
   };
@@ -1437,6 +1621,7 @@ export default function App() {
         serviceName: matchedService.name,
         status: 'pending',
         notes: clientNotes.trim(),
+        paymentOption: paymentCondition,
         date: new Date().toISOString()
       };
 
@@ -1479,6 +1664,7 @@ export default function App() {
       setClientName('');
       setClientPhone('');
       setClientNotes('');
+      setPaymentCondition('full');
       setSelectedServiceId('');
       setAttachedFileName('');
       setAttachedFileData('');
@@ -3712,6 +3898,8 @@ export default function App() {
 
     // Individual Invoices pages
     const invoicesHtml = sortedTx.map((tx, idx) => {
+      const srvTax = tx.officeFee * 0.15;
+      const srvTotal = tx.govFee + tx.officeFee + srvTax;
       return `
         <div class="page ${idx < sortedTx.length - 1 ? 'page-break' : ''}" style="page-break-before: always; page-break-inside: avoid; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
@@ -3758,65 +3946,61 @@ export default function App() {
             </div>
 
             <!-- Table of Services breakdown -->
-            <table class="invoice-table">
+            <table class="invoice-table" style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px;">
               <thead>
                 <tr>
-                  <th style="width: 60%;">وصف الخدمة والإجراء للعملية</th>
-                  <th style="width: 20%; text-align: center;">الخضوع للضريبة</th>
-                  <th style="width: 20%; text-align: left;">قيمة البند المالي</th>
+                  <th style="width: 60%; text-align: right; border-bottom: 2px solid #0f172a; padding: 8px; color: #0f172a; font-weight: bold;">وصف الخدمة والإجراء للعملية</th>
+                  <th style="width: 20%; text-align: center; border-bottom: 2px solid #0f172a; padding: 8px; color: #0f172a; font-weight: bold;">الخضوع للضريبة</th>
+                  <th style="width: 20%; text-align: left; border-bottom: 2px solid #0f172a; padding: 8px; color: #0f172a; font-weight: bold;">قيمة البند المالي</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>
+                  <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">
                     <strong style="color: #0f172a; font-size: 11.5px;">الرسوم والمستحقات الحكومية والدولة</strong>
                     <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">تشمل المبالغ المسددة للوزارات، ومنصة الجوازات، والجهات البلدية والاعتمادات الخارجية المباشرة المعفاة.</div>
                   </td>
-                  <td style="text-align: center; color: #64748b; font-size: 10.5px;">معفى / صفر ضريبة</td>
-                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.govFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: center; color: #64748b; font-size: 10.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">معفى / صفر ضريبة</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">${tx.govFee.toFixed(2)} ر.س</td>
                 </tr>
                 <tr>
-                  <td>
+                  <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">
                     <strong style="color: #0f172a; font-size: 11.5px;">أتعاب وتكاليف خدمات سما المملكة</strong>
                     <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">أتعاب المعاملة الإدارية وتدقيق الطلبات والاستشارات وصياغة الملفات والتعقيب الميداني.</div>
                   </td>
-                  <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 10.5px;">خاضع (15%)</td>
-                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.officeFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 10.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">خاضع (15%)</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">${tx.officeFee.toFixed(2)} ر.س</td>
                 </tr>
               </tbody>
             </table>
 
-            <!-- Totals Row with QR Code -->
+            <!-- Totals Row with QR Code inside invoice card -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
               <div style="display: flex; gap: 12px; align-items: center; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;">
-                <!-- ZATCA QR Code SVG representation -->
                 <svg width="60" height="60" viewBox="0 0 100 100" style="color: #0f172a;">
                   <rect x="0" y="0" width="10" height="10" fill="currentColor"/>
                   <rect x="15" y="0" width="10" height="5" fill="currentColor"/>
                   <rect x="0" y="15" width="10" height="10" fill="currentColor"/>
                   <rect x="40" y="0" width="20" height="10" fill="currentColor"/>
-                  <rect x="80" y="0" width="20" height="20" fill="currentColor"/>
-                  <rect x="80" y="30" width="10" height="10" fill="currentColor"/>
-                  <rect x="0" y="80" width="20" height="20" fill="currentColor"/>
-                  <rect x="30" y="80" width="5" height="10" fill="currentColor"/>
+                  <rect x="80" y="0" width="10" height="10" fill="currentColor"/>
                   <text x="50" y="60" font-size="7" font-weight="bold" text-anchor="middle" fill="#d97706">ZATCA</text>
                   <rect x="30" y="30" width="30" height="15" fill="currentColor" opacity="0.8"/>
                   <rect x="65" y="65" width="30" height="30" fill="currentColor"/>
                 </svg>
-                <div style="font-size: 9.5px; color: #64748b; line-height: 1.4; max-w-xs;">
-                  <strong style="color: #1e293b; display: block;">فاتورة إلكترونية معتمدة</strong>
-                  مسجل بهيئة الزكاة والضريبة والجمارك بالمملكة.
+                <div style="font-size: 9.5px; color: #64748b; line-height: 1.4; max-w-xs; text-align: right;">
+                  <strong style="color: #1e293b; display: block;">فاتورة ضريبية مبسطة</strong>
+                  فاتورة ذكية معتمدة ومسجلة بهيئة الزكاة والجمارك وضريبة الدخل لعام ٢٠٢٦م.
                 </div>
               </div>
 
               <div style="width: 260px; font-family: monospace; font-size: 10.5px; line-height: 1.8;">
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
-                  <span>أتعاب المكتب الخاضع للضريبة:</span>
+                  <span>أتعاب المكتب الخاضعة للضريبة:</span>
                   <span>${tx.officeFee.toFixed(2)} ر.س</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
                   <span>ضريبة القيمة المضافة (15%):</span>
-                  <span>${tx.tax.toFixed(2)} ر.س</span>
+                  <span>${srvTax.toFixed(2)} ر.س</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
                   <span>الرسوم والمصاريف الحكومية:</span>
@@ -3824,7 +4008,7 @@ export default function App() {
                 </div>
                 <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #020617; border-top: 1.5px solid #020617; padding-top: 5px; margin-top: 5px; background-color: #fffbeb; padding: 4px;">
                   <span style="font-family: inherit;">الإجمالي النهائي المستحق:</span>
-                  <span>${tx.total.toFixed(2)} ر.س</span>
+                  <span>${srvTotal.toFixed(2)} ر.س</span>
                 </div>
               </div>
             </div>
@@ -3850,7 +4034,7 @@ export default function App() {
               <div style="display: flex; flex-direction: column; align-items: center;">
                 <div style="height: 35px; position: relative;">
                   <svg width="95" height="30" viewBox="0 0 150 50" style="color: rgba(29, 78, 216, 0.8);">
-                    <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 C 146 20, 102 46, 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 L 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div style="text-align: right; line-height: 1.3;">
@@ -3863,7 +4047,7 @@ export default function App() {
 
           <!-- Notes section if present -->
           ${tx.notes ? `
-            <div style="margin-top: 15px; padding: 8px; background-color: #f1f5f9; border-right: 4px solid #d97706; border-radius: 6px; font-size: 9.5px; color: #475569;">
+            <div style="margin-top: 15px; padding: 8px; background-color: #f1f5f9; border-right: 4px solid #d97706; border-radius: 6px; font-size: 9.5px; color: #475569; text-align: right;">
               <strong>ملاحظات الفاتورة الضريبية:</strong> ${tx.notes}
             </div>
           ` : ''}
@@ -3928,34 +4112,23 @@ export default function App() {
     }, 7000);
   };
 
-  // Export all invoices of a specific client together as a compiled multi-page printable PDF
-  const handleExportClientInvoicesPDF = (selectedClient: string) => {
-    if (!selectedClient) {
-      setBookingToast({
-        show: true,
-        type: 'error',
-        title: 'يجب اختيار عميل أولاً',
-        message: 'يرجى تحديد العميل الذي ترغب في تصدير فواتيره مجمعة.'
-      });
-      return;
-    }
-
-    const clientTransactions = transactions.filter(t => t.clientName && t.clientName.trim() === selectedClient.trim());
+  // Export all ledger/invoices of a specific client
+  const handleExportClientInvoicesPDF = (clientName: string) => {
+    const clientTransactions = transactions.filter(t => t.clientName === clientName);
 
     if (clientTransactions.length === 0) {
       setBookingToast({
         show: true,
         type: 'error',
-        title: 'لا توجد بيانات لهذا العميل',
-        message: `لا توجد أي فواتير أو معاملات مسجلة للعميل "${selectedClient}" لتصديرها.`
+        title: 'لا توجد معاملات للعميل',
+        message: 'لا توجد أي فواتير مسجلة في النظام لهذا العميل لتصديرها.'
       });
       return;
     }
 
-    // Sort transactions by date (oldest to newest)
     const sortedTx = [...clientTransactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Calculate sum metrics
+    // Calculate totals
     const totalGov = sortedTx.reduce((acc, t) => acc + t.govFee, 0);
     const totalOffice = sortedTx.reduce((acc, t) => acc + t.officeFee, 0);
     const totalTax = sortedTx.reduce((acc, t) => acc + t.tax, 0);
@@ -3975,214 +4148,242 @@ export default function App() {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      
-      /* Multi-page break style */
-      .page {
-        padding: 2.5cm;
-        box-sizing: border-box;
-        position: relative;
-        min-height: 100vh;
-      }
-      
       .page-break {
         page-break-after: always;
-        break-after: page;
       }
-      
-      @media print {
-        body, html {
-          background-color: #ffffff !important;
-          color: #000000 !important;
-          margin: 0 !important;
-          padding: 0 !important;
-        }
-        .page {
-          padding: 1.5cm !important;
-          width: 100% !important;
-          min-height: 100vh !important;
-          height: auto !important;
-          box-shadow: none !important;
-          margin: 0 !important;
-          border: none !important;
-        }
-        .no-print {
-          display: none !important;
-        }
+      .report-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 30px;
       }
-
+      .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #e2e8f0;
+        padding-bottom: 15px;
+        margin-bottom: 25px;
+      }
+      .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+      .logo-svg {
+        color: #d97706;
+      }
       .brand-title {
-        font-size: 22px;
-        font-weight: 950;
-        color: #0c1a30;
-        margin: 0 0 5px 0;
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0;
       }
-      
       .brand-subtitle {
         font-size: 11px;
         color: #64748b;
         margin: 0;
-        font-weight: 600;
       }
-      
-      .invoice-table {
+      .report-metadata {
+        text-align: left;
+        font-size: 10.5px;
+        color: #475569;
+        line-height: 1.5;
+      }
+      .report-title-container {
+        text-align: center;
+        margin-bottom: 25px;
+      }
+      .report-main-title {
+        font-size: 16px;
+        font-weight: 700;
+        color: #1d4ed8;
+        background-color: #eff6ff;
+        border: 1px solid #dbeafe;
+        padding: 8px 20px;
+        border-radius: 10px;
+        display: inline-block;
+      }
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 25px;
+      }
+      .stat-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        text-align: center;
+      }
+      .stat-card-title {
+        font-size: 9.5px;
+        color: #64748b;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .stat-card-value {
+        font-size: 13px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .stat-card-value.highlight {
+        color: #1d4ed8;
+      }
+      .data-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
-        font-size: 11px;
+        margin-bottom: 30px;
+        font-size: 10.5px;
       }
-      
-      .invoice-table th {
+      .data-table th {
         background-color: #0f172a;
         color: #ffffff;
         font-weight: 700;
-        padding: 10px 12px;
+        padding: 8px;
         text-align: right;
         border: 1px solid #1e293b;
       }
-      
-      .invoice-table td {
-        padding: 10px 12px;
+      .data-table td {
+        padding: 8px;
         border-bottom: 1px solid #e2e8f0;
         border-left: 1px solid #e2e8f0;
         border-right: 1px solid #e2e8f0;
         color: #334155;
       }
-
-      .total-row {
-        background-color: #f1f5f9;
+      .data-table tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+      .invoice-card {
+        border: 1.5px solid #0f172a;
+        border-radius: 12px;
+        padding: 24px;
+        background-color: #ffffff;
+        max-width: 680px;
+        margin: 0 auto;
+        position: relative;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      }
+      .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2.5px solid #0f172a;
+        padding-bottom: 15px;
+        margin-bottom: 20px;
+      }
+      .invoice-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+        font-size: 11px;
+      }
+      .invoice-table th {
+        border-bottom: 2px solid #0f172a;
+        padding: 8px;
+        color: #0f172a;
         font-weight: bold;
       }
-
-      .seal-box {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        border: 2px dashed #b45309;
-        color: #b45309;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-size: 8px;
-        font-weight: 800;
-        transform: rotate(-10deg);
-        opacity: 0.85;
-        line-height: 1.3;
+      .invoice-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #e2e8f0;
       }
     `;
 
     const coverHtml = `
-      <div class="page page-break" style="page-break-after: always; display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-          <!-- Cover Header -->
-          <div style="display: flex; justify-content: space-between; border-bottom: 3px double #cbd5e1; padding-bottom: 25px; margin-bottom: 50px;">
+      <div class="report-container page-break">
+        <!-- Report Header -->
+        <div class="report-header">
+          <div class="logo-container">
+            <svg class="logo-svg" width="40" height="40" viewBox="0 0 100 100">
+              <rect x="25" y="15" width="50" height="70" rx="10" fill="none" stroke="currentColor" stroke-width="5" />
+              <circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="2 2" />
+              <path d="M40 35 L60 35 M40 45 L60 45 M35 60 L65 60" fill="none" stroke="currentColor" stroke-width="4" />
+            </svg>
             <div>
-              <h1 style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 0 0 5px 0;">مكتب سما المملكة للخدمات والتعقيب</h1>
-              <p style="color: #64748b; font-size: 11.5px; margin: 0; font-weight: bold;">كشف الحساب الضريبي الموحد ومجموعة الفواتير المجمعة لقيد الحسابات</p>
-            </div>
-            <div style="text-align: left; font-size: 11px; color: #475569; line-height: 1.6; font-family: monospace;">
-              <div>تاريخ التقرير المجمع: <strong>${new Date().toLocaleDateString('ar-SA')}</strong></div>
-              <div>المسؤول المالي: <strong>إدارة المراجعة العامة</strong></div>
-              <div>رقم الحفظ المرجعي: <strong>SM-CLIENT-${Date.now().toString().slice(-6)}</strong></div>
+              <h3 class="brand-title">مكتب سما المملكة للخدمات الشاملة</h3>
+              <p class="brand-subtitle">مؤسسة مرخصة لتصميم وتخليص المعاملات الإلكترونية والتعقيب الميداني</p>
             </div>
           </div>
-
-          <div style="text-align: center; margin-bottom: 45px;">
-            <div style="background-color: #0f172a; color: #ffffff; padding: 15px 35px; border-radius: 9999px; display: inline-block;">
-              <h2 style="font-size: 18px; font-weight: 900; margin: 0;">
-                كشف الحساب الشامل والملف الضريبي الموحد للعميل: ${selectedClient}
-              </h2>
-            </div>
-            <p style="font-size: 11.5px; color: #64748b; margin-top: 15px; font-weight: 500;">
-              يحتوي هذا الملف المدمج على كشف التحليلات التفصيلي العام لجميع المعاملات المالية، متبوعاً بكافة الفواتير الفردية المبسطة المصدرة للمستفيد خلال فترة التعامل.
-            </p>
+          <div class="report-metadata">
+            <strong>الرقم الموحد:</strong> 920000000<br>
+            <strong>رقم الترخيص:</strong> 4030456182<br>
+            <strong>التاريخ والوقت:</strong> ${new Date().toLocaleString('ar-SA')}<br>
+            <strong>نظام الفوترة الرقمي:</strong> v3.2.0-2026
           </div>
-
-          <!-- Ledger Analysis Dashboard Cards -->
-          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;">
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
-              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">عدد المعاملات والفواتير</div>
-              <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${sortedTx.length} فواتير</div>
-            </div>
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
-              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">إجمالي الرسوم الحكومية المسددة</div>
-              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalGov.toFixed(2)} ر.س</div>
-            </div>
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
-              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">صافي أتعاب خدمات المكتب</div>
-              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalOffice.toFixed(2)} ر.س</div>
-            </div>
-            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 15px; text-align: center; border: 1.5px solid #fbd5c1;">
-              <div style="font-size: 10px; color: #b45309; font-weight: bold; margin-bottom: 5px;">المجموع النهائي مع الضريبة</div>
-              <div style="font-size: 16px; font-weight: 900; color: #b45309; font-family: monospace;">${totalSum.toFixed(2)} ر.س</div>
-            </div>
-          </div>
-
-          <h3 style="font-size: 13px; font-weight: 800; color: #020617; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 5px;">فهرس وجدول تفاصيل المعاملات المالية</h3>
-          <table class="invoice-table" style="margin-top: 10px; font-size: 10px;">
-            <thead>
-              <tr style="background-color: #0f172a; color: #ffffff;">
-                <th style="padding: 8px 10px; width: 15%;">رقم الفاتورة</th>
-                <th style="padding: 8px 10px; width: 20%;">تاريخ الإصدار</th>
-                <th style="padding: 8px 10px; width: 25%;">الخدمة المعمدة</th>
-                <th style="padding: 8px 10px; text-align: left; width: 10%;">رسوم حكومية</th>
-                <th style="padding: 8px 10px; text-align: left; width: 10%;">أتعاب المكتب</th>
-                <th style="padding: 8px 10px; text-align: left; width: 10%;">ضريبة 15%</th>
-                <th style="padding: 8px 10px; text-align: left; width: 10%;">المجموع</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${sortedTx.map(t => `
-                <tr>
-                  <td style="font-weight: bold; font-family: monospace;">${t.invoiceNumber}</td>
-                  <td>${new Date(t.date).toLocaleDateString('ar-SA')}</td>
-                  <td>${t.serviceName}</td>
-                  <td style="text-align: left; font-family: monospace;">${t.govFee.toFixed(2)} ر.س</td>
-                  <td style="text-align: left; font-family: monospace;">${t.officeFee.toFixed(2)} ر.س</td>
-                  <td style="text-align: left; font-family: monospace;">${t.tax.toFixed(2)} ر.س</td>
-                  <td style="text-align: left; font-weight: bold; font-family: monospace; color: #020617;">${t.total.toFixed(2)} ر.س</td>
-                </tr>
-              `).join('')}
-              <tr style="background-color: #f1f5f9; font-weight: 900; font-size: 10.5px; text-align: right; border-top: 2px solid #020617;">
-                <td colspan="3" style="text-align: center; padding: 10px;">إجمالي ملخص الميزان والترصيد للعميل</td>
-                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalGov.toFixed(2)} ر.س</td>
-                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalOffice.toFixed(2)} ر.س</td>
-                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalTax.toFixed(2)} ر.س</td>
-                <td style="text-align: left; font-family: monospace; padding: 10px; color: #b45309;">${totalSum.toFixed(2)} ر.س</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
 
-        <!-- Signatures & Official Stamp of the cover page -->
-        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
-          <div style="text-align: center;">
-            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">ختم التحصيل المالي المعتمد:</div>
-            <div class="seal-box" style="margin: 0 auto;">
-              مكتب سما المملكة<br>
-              شؤون الحسابات<br>
-              معتمد ومسجل
-            </div>
+        <!-- Title block -->
+        <div class="report-title-container">
+          <h2 class="report-main-title">تقرير كشف الحساب والترصيد المالي الموحد للعميل</h2>
+          <p style="font-size: 12px; color: #475569; margin-top: 8px; font-weight: bold;">العميل المستفيد: ${clientName}</p>
+        </div>
+
+        <!-- Stats widgets grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-title">إجمالي عدد المعاملات والعمليات</div>
+            <div class="stat-card-value highlight">${sortedTx.length} عمليات</div>
           </div>
-          <div style="text-align: left;">
-            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">توقيع واعتماد الخزانة العامة:</div>
-            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
-              <svg width="100" height="30" viewBox="0 0 150 50" style="color: #1d4ed8; opacity: 0.9;">
-                <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 L 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              <div style="font-size: 10.5px; font-weight: bold; color: #020617; text-align: right; line-height: 1.3; margin-top: 5px;">
-                أ. عصام التركي
-                <div style="font-size: 8.5px; color: #64748b; font-weight: normal;">المدير العام والتنفيذي للتراخيص والاعتمادات</div>
-              </div>
-            </div>
+          <div class="stat-card">
+            <div class="stat-card-title">الرسوم والمبالغ الحكومية للدولة</div>
+            <div class="stat-card-value">${totalGov.toFixed(2)} ر.س</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-card-title">صافي أتعاب المكتب الخاضع للضريبة</div>
+            <div class="stat-card-value">${totalOffice.toFixed(2)} ر.س</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-title">إجمالي القيمة المستحقة شاملة الضريبة</div>
+            <div class="stat-card-value highlight" style="color: #1d4ed8;">${totalSum.toFixed(2)} ر.س</div>
+          </div>
+        </div>
+
+        <!-- Ledger Table of transactions -->
+        <h3 style="font-size: 12px; border-right: 3px solid #1d4ed8; padding-right: 8px; margin-bottom: 12px; color: #0f172a;">تفاصيل المعاملات المالية المقيدة بالملف:</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 10%;"># ومقر المرجع</th>
+              <th style="width: 25%;">اسم المعاملة بالترخيص</th>
+              <th style="width: 15%;">تاريخ التقييد والتعميد</th>
+              <th style="width: 15%; text-align: left;">الرسوم الحكومية</th>
+              <th style="width: 15%; text-align: left;">أتعاب سما المملكة</th>
+              <th style="width: 10%; text-align: center;">المرئيات / الحالة</th>
+              <th style="width: 10%; text-align: left;">الإجمالي الكلي</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${sortedTx.map((tx, idx) => `
+              <tr>
+                <td style="font-family: monospace; font-weight: bold;">#${tx.id.substring(3, 8)}</td>
+                <td style="font-weight: bold; color: #0f172a;">${tx.serviceName}</td>
+                <td style="font-family: monospace;">${tx.date || 'غير محدد'}</td>
+                <td style="text-align: left; font-family: monospace;">${tx.govFee.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace;">${tx.officeFee.toFixed(2)} ر.س</td>
+                <td style="text-align: center; font-weight: bold; color: ${tx.status === 'completed' ? '#10b981' : tx.status === 'processing' ? '#f59e0b' : '#ef4444'}">
+                  ${tx.status === 'completed' ? 'مكتملة ومرحلة' : tx.status === 'processing' ? 'قيد الإجراء' : 'ملغية/مسترجعة'}
+                </td>
+                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #1e293b;">${tx.total.toFixed(2)} ر.س</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <!-- Summary section -->
+        <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px; font-size: 11px; margin-top: 25px; border-right: 4px solid #1d4ed8;">
+          <strong>منظومة مطابقة الالتزام الضريبي للمجموعة المالية:</strong><br>
+          <span style="color: #475569; display: inline-block; margin-top: 5px;">
+            تخضع كافة المبالغ لقوانين الالتزام الضريبية وقيمة ضريبة القيمة المضافة لعام ٢٠٢٦م بفترة استحقاق سداد كاملة. تم فحص هذه السجلات من الإدارة المالية وتدقيقها قانونياً.
+          </span>
         </div>
       </div>
     `;
 
     // Individual Invoices pages
     const invoicesHtml = sortedTx.map((tx, idx) => {
+      const srvTax = tx.officeFee * 0.15;
+      const srvTotal = tx.govFee + tx.officeFee + srvTax;
       return `
         <div class="page ${idx < sortedTx.length - 1 ? 'page-break' : ''}" style="page-break-before: always; page-break-inside: avoid; display: flex; flex-direction: column; justify-content: space-between;">
           <div>
@@ -4190,7 +4391,7 @@ export default function App() {
             <div style="height: 6px; background: linear-gradient(to right, #d97706, #eab308, #b45309); margin-bottom: 25px;"></div>
 
             <!-- Internal Header Grid -->
-            <div style="display: flex; justify-content: space-between; border-b: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px;">
               <div style="display: flex; gap: 15px; align-items: flex-start;">
                 <!-- SAMA Logo -->
                 <div style="background-color: #0f172a; padding: 10px; border-radius: 12px; border: 2px solid #f59e0b; display: flex; align-items: center; justify-content: center;">
@@ -4201,27 +4402,24 @@ export default function App() {
                   </svg>
                 </div>
                 <div>
-                  <div style="font-size: 19px; font-weight: 900; color: #0f172a;">مكتب سما المملكة</div>
-                  <div style="color: #b45309; font-weight: bold; font-size: 11px;">للخدمات المتكاملة والتأشيرات والتعقيب الحكومي</div>
-                  <div style="font-size: 10px; color: #64748b; line-height: 1.5; font-family: monospace;">
-                    <div>الرقم الضريبي المستهدف: 300065432100003</div>
-                    <div>مكتب مرخص رقم: 84729 / ج</div>
-                  </div>
+                  <strong style="font-size: 15px; color: #020617;">مكتب سما المملكة للخدمات الشاملة</strong>
                 </div>
+                <p style="font-size: 9.5px; color: #64748b; margin: 0; line-height: 1.4;">
+                  سجل تجاري: 4030456182 | الرقم الضريبي للمكتب: 300065432100003<br>
+                  الموقع الإلكتروني: <span style="font-family: monospace;">www.sama-almamlakah.online</span>
+                </p>
               </div>
-              
-              <div style="text-align: left; font-size: 10.5px; line-height: 1.6; font-family: monospace; display: flex; flex-direction: column; align-items: flex-end;">
-                <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; font-weight: bold; border-radius: 4px; font-size: 10px; color: #0f172a; margin-bottom: 8px;">
-                  فاتورة ضريبية مبسطة صادرة ومسجلة
-                </div>
-                <div>رقم الفاتورة: <strong style="color: #0f172a; font-size: 11.5px;">${tx.invoiceNumber}</strong></div>
-                <div>تاريخ الإصدار: <strong>${new Date(tx.date).toLocaleDateString('ar-SA')}</strong></div>
+
+              <div style="text-align: left; font-family: monospace; font-size: 9.5px; color: #475569; line-height: 1.4;">
+                <strong style="font-size: 13px; color: #020617; display: block; font-family: Cairo;">فاتورة ضريبية مبسطة</strong>
+                <strong>رقم الفاتورة:</strong> INV-${tx.id.substring(3, 9)}<br>
+                <strong>تاريخ الإصدار والتعميد:</strong> ${tx.date || 'غير محدد'}<br>
+                <strong>الحالة:</strong> <span style="font-weight: bold; color: #10b981; font-family: Cairo;">مسددة بالكامل ✓</span>
               </div>
             </div>
 
-            <!-- Client Details Box -->
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
-              <h4 style="margin: 0 0 8px 0; font-size: 10.5px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">بيانات العميل المستفيد والمكلف</h4>
+            <!-- Client Info sub block -->
+            <div style="background-color: #f8fafc; border: 1.5px solid #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
               <div style="display: flex; justify-content: space-between; font-size: 11.5px;">
                 <div>العميل: <strong style="color: #0f172a; font-size: 12.5px;">${tx.clientName}</strong></div>
                 <div>الخدمة المطلوبة: <strong style="color: #0f172a;">${tx.serviceName}</strong></div>
@@ -4232,7 +4430,7 @@ export default function App() {
             <table class="invoice-table">
               <thead>
                 <tr>
-                  <th style="width: 60%;">وصف الخدمة والإجراء للعملية</th>
+                  <th style="width: 60%; text-align: right;">وصف الخدمة والإجراء للعملية</th>
                   <th style="width: 20%; text-align: center;">الخضوع للضريبة</th>
                   <th style="width: 20%; text-align: left;">قيمة البند المالي</th>
                 </tr>
@@ -4244,15 +4442,7 @@ export default function App() {
                     <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">تشمل المبالغ المسددة للوزارات، ومنصة الجوازات، والجهات البلدية والاعتمادات الخارجية المباشرة المعفاة.</div>
                   </td>
                   <td style="text-align: center; color: #64748b; font-size: 10.5px;">معفى / صفر ضريبة</td>
-                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.govFee.toFixed(2)} ر.س</td>
-                </tr>
-                <tr>
-                  <td>
-                    <strong style="color: #0f172a; font-size: 11.5px;">أتعاب وتكاليف خدمات سما المملكة</strong>
-                    <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">أتعاب المعاملة الإدارية وتدقيق الطلبات والاستشارات وصياغة الملفات والتعقيب الميداني.</div>
-                  </td>
-                  <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 10.5px;">خاضع (15%)</td>
-                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px;">${tx.officeFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace; font-weight: bold;">${tx.govFee.toFixed(2)} ر.س</td>
                 </tr>
               </tbody>
             </table>
@@ -4282,7 +4472,7 @@ export default function App() {
 
               <div style="width: 260px; font-family: monospace; font-size: 10.5px; line-height: 1.8;">
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
-                  <span>أتعاب المكتب الخاضع للضريبة:</span>
+                  <span>أتعاب المكتب الخاضعة للضريبة:</span>
                   <span>${tx.officeFee.toFixed(2)} ر.س</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
@@ -4321,7 +4511,7 @@ export default function App() {
               <div style="display: flex; flex-direction: column; align-items: center;">
                 <div style="height: 35px; position: relative;">
                   <svg width="95" height="30" viewBox="0 0 150 50" style="color: rgba(29, 78, 216, 0.8);">
-                    <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 C 146 20, 102 46, 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 L 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
                 </div>
                 <div style="text-align: right; line-height: 1.3;">
@@ -4352,7 +4542,7 @@ export default function App() {
       <html lang="ar" dir="rtl">
       <head>
         <meta charset="UTF-8">
-        <title>حقيبة فواتير العميل ${selectedClient} - مكتب سما المملكة</title>
+        <title>كشف حساب العميل ${clientName} - مكتب سما المملكة</title>
         <style>${reportStyles}</style>
       </head>
       <body>
@@ -4390,485 +4580,181 @@ export default function App() {
     setBookingToast({
       show: true,
       type: 'success',
-      title: 'تم إصدار الفواتير المجمعة للعميل',
-      message: `تم تجميع عدد (${sortedTx.length}) فواتير ضريبية للعميل "${selectedClient}" ومزامنتها للطباعة المجمعة.`
+      title: 'تم تصدير كشف الحساب والترصيد المالي',
+      message: `تم إصدار وتجهيز عدد (${sortedTx.length}) فواتير ضريبية مفصلة للعميل (${clientName}) لطباعتها في حزمة واحدة.`
     });
 
     setTimeout(() => {
-      setBookingToast(prev => prev && prev.title === 'تم إصدار الفواتير المجمعة للعميل' ? { ...prev, show: false } : prev);
+      setBookingToast(prev => prev && prev.title === 'تم تصدير كشف الحساب والترصيد المالي' ? { ...prev, show: false } : prev);
     }, 7000);
   };
 
-  // Delete transaction safely
-  const handleDeleteTransaction = (txId: string) => {
-    if (window.confirm('هل أنت متأكد من رغبتك في حذف هذا القيد المالي بشكل نهائي؟')) {
-      const filtered = transactions.filter(t => t.id !== txId);
-      setTransactions(filtered);
+  // Derived state analytics for admin dashboard
+  const totalOfficeRevenues = transactions.reduce((acc, t) => acc + t.officeFee, 0);
+  const totalVATCollected = transactions.reduce((acc, t) => acc + t.tax, 0);
+  const totalGovSpent = transactions.reduce((acc, t) => acc + t.govFee, 0);
+  const totalOverallAccountingVolume = transactions.reduce((acc, t) => acc + t.total, 0);
 
-      // Delete from Firestore
-      deleteDoc(doc(db, 'transactions', txId))
-        .catch(err => handleFirestoreError(err, OperationType.DELETE, `transactions/${txId}`));
-    }
-  };
-
-  // Delete Service safely
-  const handleDeleteService = (srvId: string) => {
-    const srv = services.find(s => s.id === srvId);
-    if (!srv) return;
-    
-    if (services.length <= 1) {
-      setShowCannotDeleteAlert(true);
-      return;
-    }
-    setServiceToDeleteCheck(srv);
-  };
-
-  const confirmDeleteService = () => {
-    if (serviceToDeleteCheck) {
-      const filtered = services.filter(s => s.id !== serviceToDeleteCheck.id);
-      setServices(filtered);
-
-      // delete from Firestore
-      deleteDoc(doc(db, 'services', serviceToDeleteCheck.id))
-        .catch(err => handleFirestoreError(err, OperationType.DELETE, `services/${serviceToDeleteCheck.id}`));
-
-      setServiceToDeleteCheck(null);
-    }
-  };
-
-  // Handling navigation tabs
-  const handleTabClick = (tab: 'home' | 'track' | 'jobs' | 'admin') => {
-    setIsMobileMenuOpen(false);
-    if (tab === 'admin') {
-      if (isAdminAuthenticated) {
-        setActiveTab('admin');
-      } else {
-        setShowPasscode(true);
-      }
-    } else {
-      setActiveTab(tab);
-    }
-  };
-
-  const handleAdminAuthSuccess = () => {
-    setIsAdminAuthenticated(true);
-    sessionStorage.setItem('sm_admin_logged', 'true');
-    setShowPasscode(false);
-    setActiveTab('admin');
-  };
-
-  const handleAdminLogout = () => {
-    setIsAdminAuthenticated(false);
-    sessionStorage.removeItem('sm_admin_logged');
-    setActiveTab('home');
-  };
-
-  // --- CUSTOMER CSAT AVERAGE & STATISTICS ---
-  const ratedBookings = bookings.filter(b => b.rating !== undefined && b.rating !== null);
+  const ratedBookings = bookings.filter(b => b.rating && b.rating > 0);
   const totalReviewsCount = ratedBookings.length;
-  const averageServiceRating = totalReviewsCount > 0
-    ? (ratedBookings.reduce((sum, b) => sum + (b.rating || 0), 0) / totalReviewsCount).toFixed(1)
+  const averageServiceRating = totalReviewsCount > 0 
+    ? (ratedBookings.reduce((sum, b) => sum + (b.rating || 0), 0) / totalReviewsCount).toFixed(1) 
     : "5.0";
 
-  // --- FINANCIAL CALC COMBINED ---
-  const totalGovSpent = transactions.reduce((sum, t) => sum + t.govFee, 0);
-  const totalOfficeRevenues = transactions.reduce((sum, t) => sum + t.officeFee, 0);
-  const totalVATCollected = transactions.reduce((sum, t) => sum + t.tax, 0);
-  const totalOverallAccountingVolume = totalGovSpent + totalOfficeRevenues + totalVATCollected;
-
   return (
-    <div 
-      className="relative min-h-screen bg-slate-50 transition-all duration-500 flex flex-col"
-      dir={lang === 'ar' ? 'rtl' : 'ltr'} 
-      style={{ 
-        fontFamily: lang === 'ar' 
-          ? '"Tajawal", "Helvetica Neue", Helvetica, "Segoe UI", system-ui, -apple-system, sans-serif'
-          : '"Inter", system-ui, -apple-system, sans-serif',
-      }}
-    >
-      {/* 🌟 Safari-compatible Hardware-Accelerated Fixed Background Layer (Resolves iOS Safari 'bg-fixed' distortion & lag bugs) */}
-      <div 
-        className="fixed inset-0 pointer-events-none z-0 opacity-100"
-        style={{ 
-          backgroundImage: `linear-gradient(rgba(248, 250, 252, 0.94), rgba(248, 250, 252, 0.94)), url("${getActiveMakkahImg()}")`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
+    <div className="bg-slate-900 min-h-screen text-slate-100 font-sans pb-12 relative overflow-x-hidden">
       
-      {/* Scrollable Main Content Container (Placed in standard relative positioning to sit on top of background) */}
-      <div className="relative z-10 flex-grow flex flex-col">
-
-      
-      {/* Top Main Nav */}
-      <nav className="bg-slate-900 border-b border-slate-950 text-white shadow-lg sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            
-            {/* Logo brand */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden border border-amber-500/30 flex-shrink-0 bg-slate-950 shadow-md">
-                <img 
-                  src={samaLogoImg} 
-                  alt={lang === 'ar' ? 'شعار سما المملكة' : 'Sama Al-Mamlaka Logo'} 
-                  className="w-full h-full object-cover"
-                  referrerPolicy="no-referrer"
-                />
-              </div>
-              <div className="flex flex-col sm:flex-row sm:items-center">
-                <span className="font-extrabold text-xs sm:text-base md:text-xl tracking-tight text-amber-500 whitespace-nowrap">{t('officeName')}</span>
-                <span className="hidden sm:inline-block sm:mr-2 text-[10px] sm:text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-750 self-start sm:self-auto mt-0.5 sm:mt-0">{t('integratedServices')}</span>
-              </div>
-            </div>
-
-            {/* Nav tabs desktop */}
-            <div className="hidden md:flex items-center gap-2 lg:gap-4">
-              <button 
-                onClick={() => handleTabClick('home')}
-                className={`px-3 py-2 text-xs lg:text-sm font-bold rounded transition-all flex items-center gap-1.5 ${activeTab === 'home' ? 'bg-amber-600 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white hover:bg-slate-800'}`}
-              >
-                <Home className="w-4 h-4" />
-                <span>{t('home')}</span>
-              </button>
-
-              <button 
-                onClick={() => handleTabClick('track')}
-                className={`px-3 py-2 text-xs lg:text-sm font-bold rounded transition-all flex items-center gap-1.5 ${activeTab === 'track' ? 'bg-amber-600 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white hover:bg-slate-800'}`}
-              >
-                <Search className="w-4 h-4" />
-                <span>{t('trackRequest')}</span>
-              </button>
-
-              <button 
-                onClick={() => handleTabClick('jobs')}
-                className={`px-3 py-2 text-xs lg:text-sm font-bold rounded transition-all flex items-center gap-1.5 ${activeTab === 'jobs' ? 'bg-amber-600 text-slate-950 shadow-md' : 'text-slate-300 hover:text-white hover:bg-slate-800'}`}
-              >
-                <Briefcase className="w-4 h-4" />
-                <span className="relative">
-                  {t('vacancies')}
-                  {jobVacancies.length > 0 && (
-                    <span className="absolute -top-3 -left-3.5 bg-red-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full animate-bounce">
-                      {jobVacancies.length}
-                    </span>
-                  )}
-                </span>
-              </button>
-
-              <button 
-                onClick={() => handleTabClick('admin')}
-                className={`px-3 py-2 text-xs lg:text-sm font-bold rounded transition-all flex items-center gap-1.5 ${activeTab === 'admin' ? 'bg-slate-200 text-slate-950 shadow-md' : 'bg-slate-800 border border-slate-700 text-amber-500 hover:bg-slate-700'}`}
-              >
-                <Lock className="w-4 h-4" />
-                <span>{t('adminPanel')}</span>
-              </button>
-
-              {/* Language Switcher Button (Desktop) */}
-              <button 
-                onClick={handleLangToggle}
-                className="px-3 py-2 text-xs lg:text-sm font-bold rounded transition-all flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-amber-500 hover:bg-slate-700 cursor-pointer select-none"
-                title={lang === 'ar' ? 'Switch to English' : 'التحويل للعربية'}
-              >
-                <LucideIcons.Globe className="w-4 h-4 text-amber-500" />
-                <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
-              </button>
-
-              {isAdminAuthenticated && activeTab === 'admin' && (
-                <button 
-                  onClick={handleAdminLogout}
-                  title="تسجيل الخروج من الإدارة"
-                  className="p-1.5 bg-red-900/40 text-red-300 hover:text-white rounded border border-red-800/60 hover:bg-red-900 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {/* Mobile menu toggle & Language Selector */}
-            <div className="flex md:hidden items-center gap-2">
-              {/* Language Switcher Button (Mobile) */}
-              <button 
-                onClick={handleLangToggle}
-                className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700/65 flex items-center gap-1 text-xs select-none"
-                title={lang === 'ar' ? 'Switch to English' : 'التحويل للعربية'}
-              >
-                <LucideIcons.Globe className="w-4 h-4 text-amber-500 animate-pulse" />
-                <span className="font-bold">{lang === 'ar' ? 'EN' : 'عربي'}</span>
-              </button>
-
-              {isAdminAuthenticated && activeTab === 'admin' && (
-                <button 
-                  onClick={handleAdminLogout}
-                  title="تسجيل الخروج من الإدارة"
-                  className="p-2 bg-red-900/40 text-red-300 hover:text-white rounded border border-red-800/60 hover:bg-red-900 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              )}
-              
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500 border border-slate-700/65"
-              >
-                {isMobileMenuOpen ? <X className="w-5 h-5 text-amber-500" /> : <Menu className="w-5 h-5 text-amber-500" />}
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Mobile Dropdown Panel */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-950 bg-slate-900/95 backdrop-blur-md px-4 py-3 space-y-2 shadow-inner">
-            <button 
-              onClick={() => handleTabClick('home')}
-              className={`w-full px-4 py-3 text-sm font-bold rounded-lg transition-all flex items-center gap-2.5 ${activeTab === 'home' ? 'bg-amber-600 text-slate-950 shadow-md font-extrabold' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              <Home className="w-4.5 h-4.5 text-amber-500" />
-              <span>{t('home')}</span>
-            </button>
-
-            <button 
-              onClick={() => handleTabClick('track')}
-              className={`w-full px-4 py-3 text-sm font-bold rounded-lg transition-all flex items-center gap-2.5 ${activeTab === 'track' ? 'bg-amber-600 text-slate-950 shadow-md font-extrabold' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              <Search className="w-4.5 h-4.5 text-amber-500" />
-              <span>{t('trackRequest')}</span>
-            </button>
-
-            <button 
-              onClick={() => handleTabClick('jobs')}
-              className={`w-full px-4 py-3 text-sm font-bold rounded-lg transition-all flex items-center justify-between ${activeTab === 'jobs' ? 'bg-amber-600 text-slate-950 shadow-md font-extrabold' : 'text-slate-300 hover:bg-slate-800'}`}
-            >
-              <div className="flex items-center gap-2.5">
-                <Briefcase className="w-4.5 h-4.5 text-amber-500" />
-                <span>{t('vacancies')}</span>
-              </div>
-              {jobVacancies.length > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
-                  {jobVacancies.length} {lang === 'ar' ? 'شاغر' : 'positions'}
-                </span>
-              )}
-            </button>
-
-            <button 
-              onClick={() => handleTabClick('admin')}
-              className={`w-full px-4 py-3 text-sm font-bold rounded-lg transition-all flex items-center gap-2.5 ${activeTab === 'admin' ? 'bg-slate-200 text-slate-950 shadow-md font-extrabold' : 'bg-slate-800 border border-slate-750 text-amber-500 hover:bg-slate-750'}`}
-            >
-              <Lock className="w-4.5 h-4.5" />
-              <span>{t('adminPanel')}</span>
-            </button>
-          </div>
-        )}
-      </nav>
-
-      {/* BANNER CLOCK & SYSTEM STATE */}
-      <div className="bg-slate-950 text-slate-400 py-2 border-b border-slate-800 text-center text-xs font-mono select-none px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-1 text-[11px]">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-300 font-sans font-medium">{t('connectedStatus')}</span>
-          </div>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span>{t('localTime')} <strong className="text-slate-200">2026-05-19</strong></span>
-            <span className="hidden sm:inline">|</span>
-            <span>{t('currentUser')} <strong className="text-amber-500">essam77142@gmail.com</strong></span>
-          </div>
-        </div>
+      {/* Decorative main atmospheric background of Makkah (dynamic) */}
+      <div className="absolute top-0 inset-x-0 h-[550px] overflow-hidden pointer-events-none select-none z-0">
+        <img 
+          src={getActiveMakkahImg()} 
+          alt="Makkah Landscape" 
+          className="w-full h-full object-cover object-bottom opacity-20 filter saturate-50 brightness-75 transition-all duration-700"
+          referrerPolicy="no-referrer"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/60 to-slate-900 z-1" />
       </div>
 
-      {/* MAIN CONTAINER CONTENT VIEW */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 flex flex-col min-h-screen">
         
-        {/* ==================== TAB 1: CLIENT HOME PORTAL ==================== */}
-        {activeTab === 'home' && (
-          <div className="space-y-12">
-            
-            {/* Elegant Saudi Pattern Hero */}
-            <div 
-              className="bg-slate-900 text-white rounded-2xl overflow-hidden shadow-2xl relative border border-slate-850 bg-cover bg-center transition-all duration-500" 
-              style={{ backgroundImage: `linear-gradient(to left, rgba(15, 23, 42, 0.96) 45%, rgba(15, 23, 42, 0.7) 80%, rgba(15, 23, 42, 0.3)), url("${getActiveMakkahImg()}")` }}
+        {/* Main Header / Top Branding Bar */}
+        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-white/10 pb-5 mb-8">
+          <div className="flex items-center gap-3.5 text-right w-full sm:w-auto">
+            <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-2 sm:p-2.5 rounded-2xl shadow-xl border border-amber-400/30 flex items-center justify-center">
+              <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
+                <path d="M50 12 L20 48 L42 48 L32 82 L68 82 L58 48 L80 48 Z" fill="currentColor" />
+                <circle cx="50" cy="30" r="6" fill="#ffffff" />
+                <path d="M12 60 C32 88, 68 88, 88 60" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-black text-white tracking-wide">مكتب سما المملكة للخدمات</h1>
+              <p className="text-[10px] text-amber-500 font-bold block mt-0.5">البوابة الرقمية المعتمدة للخدمات وتخليص المعاملات الحكومية</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={handleLangToggle}
+              className="px-3.5 py-1.5 bg-white/5 hover:bg-white/10 text-xs font-bold text-amber-400 rounded-xl border border-white/10 transition-all cursor-pointer flex items-center gap-1.5 shadow"
             >
-              {/* Abs decoration backdrop line */}
-              <div className="absolute top-0 right-0 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl -z-10"></div>
-              <div className="absolute bottom-0 left-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl -z-10"></div>
-              
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-8 md:p-12">
-                {/* Right Side: Welcome text and info - occupies 7 cols on lg */}
-                <div className={`lg:col-span-7 flex flex-col justify-center ${lang === 'ar' ? 'text-center md:text-right' : 'text-center md:text-left'}`}>
-                  <div className="inline-flex items-center gap-2 bg-amber-500/10 text-amber-500 px-3 py-1 rounded-full text-xs font-bold border border-amber-500/20 mb-4 self-center md:self-start">
-                    <Activity className="w-3.5 h-3.5 animate-pulse" />
-                    <span>{lang === 'ar' ? 'البوابة الرسمية والذكية للمستفيدين' : 'Official and Intelligent Beneficiary Portal'}</span>
-                  </div>
-                  <h1 className="text-3xl md:text-5xl font-black mb-4 leading-normal text-slate-100 font-sans">
-                    {lang === 'ar' ? (
-                      <>ننجز معاملاتك بكل <span className="text-amber-500 underline decoration-wavy decoration-amber-500/40">ثقة وكفاءة</span></>
-                    ) : (
-                      <>We process your transactions with <span className="text-amber-500 underline decoration-wavy decoration-amber-500/40">Confidence & Excellence</span></>
-                    )}
-                  </h1>
-                  
-                  <div className={`bg-slate-950/80 backdrop-blur-md rounded-2xl p-5 border border-amber-500/30 max-w-3xl mb-8 shadow-2xl relative overflow-hidden ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-                    <div className={`absolute top-0 ${lang === 'ar' ? 'right-0' : 'left-0'} w-1.5 h-full bg-amber-500`}></div>
-                    <div className="flex items-center gap-2 text-amber-500 font-extrabold text-xs mb-2 bg-amber-500/10 w-fit px-2.5 py-1 rounded-md border border-amber-500/20">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                      <span>{lang === 'ar' ? 'البيان الترحيبي الخاص بالزوار والعملاء' : 'Official Visitor Welcome Statement'}</span>
-                    </div>
-                    <p className="text-xs md:text-sm text-slate-100 leading-relaxed font-sans whitespace-pre-wrap">
-                      {lang === 'en' && welcomeMessage.startsWith('أهلاً ومرحباً بكم') 
-                        ? 'Welcome and greetings to Sama Al-Mamlaka digital platform for integrated services and government clearance. We are pleased to assist you with speed and safety under the supervision of specialists.' 
-                        : welcomeMessage}
+              <span>🌐</span>
+              <span>{lang === 'ar' ? 'English' : 'عربي'}</span>
+            </button>
+
+            {isAdminAuthenticated ? (
+              <button
+                onClick={() => {
+                  setIsAdminAuthenticated(false);
+                  sessionStorage.removeItem('sm_admin_logged');
+                  setActiveTab('home');
+                }}
+                className="px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-xs font-extrabold text-red-400 rounded-xl border border-red-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span>الخروج من الإدارة 🔓</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowPasscode(true)}
+                className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 rounded-xl border border-amber-400/40 transition-all cursor-pointer flex items-center gap-1.5 shadow"
+              >
+                <span>لوحة الإدارة 🔒</span>
+              </button>
+            )}
+          </div>
+        </header>
+
+        {/* --- CUSTOM APP NAVIGATION TABS --- */}
+        <nav className="flex items-center gap-1 sm:gap-2 border-b border-white/5 pb-2 mb-6">
+          <button
+            onClick={() => {
+              setActiveTab('home');
+              setIsFabMenuOpen(false);
+            }}
+            className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'home' 
+                ? 'bg-amber-600 text-slate-950 border border-amber-400 font-black' 
+                : 'text-slate-300 hover:bg-white/5 hover:text-white border border-transparent'
+            }`}
+          >
+            <span>📜</span>
+            <span>{lang === 'ar' ? 'دليل الخدمات وسجِّل الحجوزات' : 'Service Directory & Booking Logs'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('track');
+              setIsFabMenuOpen(false);
+            }}
+            className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'track' 
+                ? 'bg-amber-600 text-slate-950 border border-amber-400 font-black' 
+                : 'text-slate-300 hover:bg-white/5 hover:text-white border border-transparent'
+            }`}
+          >
+            <span>🔍</span>
+            <span>{lang === 'ar' ? 'الاستفسار والمتابعة الفورية' : 'Request Status & Inquiry'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('jobs');
+              setIsFabMenuOpen(false);
+            }}
+            className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'jobs' 
+                ? 'bg-amber-600 text-slate-950 border border-amber-400 font-black' 
+                : 'text-slate-300 hover:bg-white/5 hover:text-white border border-transparent'
+            }`}
+          >
+            <span>💼</span>
+            <span>{lang === 'ar' ? 'بوابة التوظيف المهني بالمكتب' : 'Sama Careers & Recruitment'}</span>
+          </button>
+
+          {isAdminAuthenticated && (
+            <button
+              onClick={() => {
+                setActiveTab('admin');
+                setIsFabMenuOpen(false);
+              }}
+              className={`px-4 py-2 text-xs font-black rounded-lg transition-all flex items-center gap-1.5 cursor-pointer mr-auto ${
+                activeTab === 'admin' 
+                  ? 'bg-red-650 text-white border border-red-500 font-black' 
+                  : 'text-amber-500 hover:bg-white/5 hover:text-white border border-transparent'
+              }`}
+            >
+              <span>⚙️</span>
+              <span>{lang === 'ar' ? 'لوحة التحكم الشاملة' : 'Admin Operations Center'}</span>
+            </button>
+          )}
+        </nav>
+
+        {/* ==================== TAB 1 (MAIN VIEW): INDEX & BOOKINGS LOGS ==================== */}
+        {activeTab === 'home' && (
+          <div className="space-y-6">
+            
+            {/* Elegant Main Institutional Welcome Banner */}
+            {!isAdminAuthenticated && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch bg-slate-900/40 border-2 border-amber-500/20 rounded-2xl p-6 sm:p-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-md relative overflow-hidden">
+                <div className="lg:col-span-7 flex flex-col justify-between p-1 sm:p-1 space-y-4 text-right">
+                  <div className="space-y-2.5">
+                    <span className="text-[10px] font-black uppercase text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 leading-none inline-block">
+                      {lang === 'ar' ? 'البث المؤسسي واللوائح الجديدة المعتمدة' : 'Official Portal & Core Regulation Updates'}
+                    </span>
+                    <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
+                      ${t('welcomeTitle') || (lang === 'ar' ? 'التوجيه الرقمي وتخليص المعاملات الإجرائية' : 'Digital Services Bureau & Cost Clearing')}
+                    </h2>
+                    <p className="text-slate-350 text-[11.5px] leading-relaxed font-medium">
+                      ${welcomeMessage || (lang === 'ar' 
+                        ? 'أهلاً ومرحباً بكم مع مكتب سما المملكة للخدمات المعاملات الشاملة... ننجز كافة الاستمارات الحكومية بدقة متناهية والتزام تام.' 
+                        : 'Welcome to Sama Kingdom electronic terminal...')}
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 justify-start">
-                    <a 
-                      href="#booking-anchor" 
-                      className="bg-amber-600 hover:bg-amber-500 text-slate-950 font-extrabold px-8 py-3.5 rounded-lg text-center transition-all shadow-lg hover:shadow-amber-600/20 text-sm"
-                    >
-                      {lang === 'ar' ? 'اطلب خدمتك الآن' : 'Request Service Now'}
-                    </a>
-                    <button 
-                      onClick={() => handleTabClick('track')}
-                      className="bg-slate-800 hover:bg-slate-750 hover:text-white text-slate-200 font-bold px-8 py-3.5 rounded-lg text-center transition-all text-sm border border-slate-700"
-                    >
-                      {lang === 'ar' ? 'الاستعلام المباشر عن حالة المعاملة' : 'Direct Transaction Status Query'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Left Side: Outstanding Royal Logo with customized premium background - occupies 5 cols on lg */}
-                <div className="lg:col-span-5 flex flex-col items-center justify-center">
-                  <div className="relative group w-64 h-64 md:w-72 md:h-72 rounded-3xl overflow-hidden shadow-2xl border-2 border-amber-500/40 bg-slate-950 flex items-center justify-center transition-all duration-500 hover:border-amber-400 hover:scale-102">
-                    
-                    {/* Glowing backlight */}
-                    <div className="absolute -inset-1 bg-gradient-to-tr from-amber-600 to-indigo-600 rounded-3xl blur opacity-30 group-hover:opacity-40 transition-opacity duration-500"></div>
-                    
-                    {/* Dynamic overlay reflection */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent opacity-80 z-10"></div>
-                    
-                    {/* The Actual Luxury Logo Image */}
-                    <img 
-                      src={samaLogoImg} 
-                      alt={lang === 'ar' ? 'شعار مكتب سما المملكة' : 'Sama Al-Mamlaka Logo'} 
-                      className="w-full h-full object-cover relative z-0"
-                      referrerPolicy="no-referrer"
-                    />
-
-                    {/* Logo Info Overlay */}
-                    <div className="absolute bottom-4 inset-x-4 z-20 text-center space-y-1">
-                      <h3 className="text-amber-400 font-black text-sm tracking-wide drop-shadow-md">{t('officeName')}</h3>
-                      <p className="text-slate-300 text-[9px] drop-shadow-sm font-sans">{lang === 'ar' ? 'الخدمات المتكاملة وتخليص المعاملات الحكومية' : 'Integrated Services & Government Clearance'}</p>
-                    </div>
-
-                    {/* Live indicator badge */}
-                    <span className="absolute top-3 left-3 z-25 bg-amber-500 text-slate-950 text-[8px] font-black px-2 py-0.5 rounded-full border border-amber-400 animate-pulse uppercase tracking-wider font-sans">
-                      المكتب الرقمي الموثق
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* BRAND URL & QR CODE LUXURY WIDGET (رابط الموقع المميز بتصميم مذهل يجذب الانتباه - مخفي ويظهر فقط لمسؤولي الموقع) */}
-            {isAdminAuthenticated && showBrandedUrlBanner && (
-              <div className="bg-gradient-to-l from-slate-900 via-slate-950 to-slate-900 rounded-2xl border-2 border-dashed border-amber-500/60 p-6 md:p-8 text-white shadow-2xl relative overflow-hidden animate-fade-in my-6">
-                {/* Administrative safeguard header */}
-                <div className="absolute top-2 left-2 bg-red-600/95 text-white font-bold text-[9px] px-2.5 py-1 rounded-md z-30 uppercase tracking-widest flex items-center gap-1.5 select-none shadow-md">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  <span>لوحة المسؤول المعتمد (مخفية عن بقية الزوار)</span>
-                </div>
-
-                {/* Premium Glow Overlays */}
-                <div className="absolute top-0 left-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl"></div>
-                <div className="absolute bottom-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl"></div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
-                  
-                  {/* Right Area: Large Interactive Domain and copy controls (7 columns) */}
-                  <div className="lg:col-span-7 text-right space-y-4 font-sans">
-                    <div className="flex flex-wrap items-center gap-2 justify-start">
-                      <span className="bg-amber-500 text-slate-950 font-black text-[9px] sm:text-[10px] px-2.5 py-1 rounded-md uppercase tracking-wide flex items-center gap-1 shadow-3xs">
-                        <Sparkles className="w-3.5 h-3.5 animate-spin text-slate-950" />
-                        <span>الرابط الرقمي الرسمي المعتمد</span>
-                      </span>
-                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[9px] sm:text-[10px] px-2.5 py-1 rounded-md font-bold flex items-center gap-1 animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                        <span>نشط ومعتمد رسمياً ✓</span>
-                      </span>
-                      <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 text-[9px] sm:text-[10px] px-2.5 py-1 rounded-md font-bold">
-                        بروتوكول آمن SSL 🔒
-                      </span>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <h3 className="text-xl sm:text-2xl font-black text-white leading-normal">
-                        بوابة النفاذ المميزة لمكتب <span className="text-amber-400 font-extrabold">سما المملكة للخدمات المتكاملة</span>
-                      </h3>
-                      <p className="text-slate-350 text-xs sm:text-sm leading-relaxed max-w-xl">
-                        يسعدنا تمكين زوارنا الأعزاء ومراجعينا الكرام من النفاذ السريع للمنصة واستعراض دليل الخدمات عبر هذا الرابط المميز والبارز، الداعم لبروتوكولات الأمان الحكومية.
-                      </p>
-                    </div>
-
-                    {/* Absolute Stunning Link Container */}
-                    <div className="bg-slate-950/90 rounded-2xl border-2 border-slate-800 p-4 relative group max-w-2xl shadow-inner transition-all hover:border-amber-500/50">
-                      <div className="absolute top-3 left-4 flex gap-1.5 text-slate-600 select-none">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70"></span>
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70"></span>
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-500/70"></span>
-                      </div>
-
-                      <div className="pt-5 pb-2 text-center select-all">
-                        <span className="text-slate-500 text-[11px] sm:text-xs font-mono block">https://</span>
-                        <strong className="text-xl sm:text-3.5xl font-mono tracking-wider text-amber-500 font-extrabold block drop-shadow-lg transition-all group-hover:text-amber-400 py-1">
-                          {officeDomain}
-                        </strong>
-                      </div>
-
-                      {/* Interactive Click to Copy Panel */}
-                      <div className="border-t border-slate-800/80 pt-3 flex flex-col sm:flex-row justify-between items-center gap-3">
-                        <span className="text-[10px] text-slate-400 font-medium text-right sm:text-right">انقر لنسخ الرابط المطور ومشاركته مع المستفيدين</span>
-                        
-                        <button
-                          type="button"
-                          onClick={handleCopyDomainLink}
-                          className={`text-xs font-black px-5 py-2.5 rounded-xl transition-all w-full sm:w-auto flex items-center justify-center gap-1.5 cursor-pointer shadow-md ${
-                            domainCopied
-                              ? 'bg-emerald-600 text-white hover:bg-emerald-500 hover:scale-102 scale-102 ring-2 ring-emerald-500/40'
-                              : 'bg-amber-500 text-slate-950 hover:bg-amber-400 hover:scale-102 hover:shadow-amber-500/20 active:scale-98'
-                          }`}
-                        >
-                          {domainCopied ? (
-                            <>
-                              <Check className="w-4 h-4 text-white animate-bounce" />
-                              <span>تم نسخ الرابط بنجاح! 📋</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-4 h-4 text-slate-950" />
-                              <span>نسخ الرابط المميز للمكتب</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Share shortcuts */}
-                    <div className="flex flex-wrap gap-2 pt-1 max-w-2xl justify-start">
-                      <a
-                        href={`https://wa.me/?text=${encodeURIComponent(`تفضل بزيارة منصة مكتب سما المملكة للخدمات الإلكترونية المتكاملة وتخليص المعاملات الحكومية على الرابط المعتمد:\nhttps://${officeDomain}`)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>مشاركة فورية على الواتساب</span>
-                      </a>
-                      
-                      <a
-                        href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`منصة مكتب سما المملكة الرقمي لتخليص المعاملات الحكومية وتأشيرات العمل والسفر:\nhttps://${officeDomain}`)}`}
-                        target="_blank"
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto flex-shrink-0 pt-2">
+                    <a
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`مكتب سما المملكة الرقمي لتخليص المعاملات الحكومية وتأشيرات العمل والسفر:\nhttps://${officeDomain}`)}`}
+                      target="_blank"
                         rel="noopener noreferrer"
                         className="bg-slate-800 hover:bg-slate-700/80 text-sky-400 border border-slate-700 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all"
                       >
@@ -4975,7 +4861,6 @@ export default function App() {
                   </div>
 
                 </div>
-              </div>
             )}
 
             {/* SERVICES PREVIEW CARDS */}
@@ -4998,15 +4883,18 @@ export default function App() {
                   return (
                     <div 
                       key={s.id} 
-                      className="bg-white rounded-xl shadow border border-slate-200 hover:border-amber-500/60 p-5 flex flex-col justify-between hover:shadow-md transition-all relative group"
+                      className="bg-white rounded-2xl shadow-sm border border-slate-200/90 hover:border-amber-500 hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300 transform hover:-translate-y-1 p-6 flex flex-col justify-between relative group overflow-hidden"
                     >
+                      {/* Top luxury decorative gradient strip */}
+                      <div className="absolute top-0 right-0 left-0 h-[4px] bg-gradient-to-r from-amber-500 to-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      
                       <div>
                         {/* Service Card Top */}
                         <div className="flex justify-between items-start mb-4">
-                          <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/80 group-hover:bg-amber-100/70 transition-all duration-300">
                             {renderServiceIcon(s.icon, "w-6 h-6 text-amber-700")}
                           </div>
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200 uppercase tracking-widest">
+                          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
                             {s.category === 'visa' && (lang === 'ar' ? 'خدمات تأشيرات' : 'Visas Services')}
                             {s.category === 'gov' && (lang === 'ar' ? 'تعقيب ومراجعة دائرية' : 'Gov Clearance')}
                             {s.category === 'transport' && (lang === 'ar' ? 'نقل ومواصلات' : 'Transport & Logistics')}
@@ -5015,18 +4903,23 @@ export default function App() {
                         </div>
 
                         {/* Title and details */}
-                        <h3 className="text-lg font-black text-slate-900 mb-2">{getTranslatedServiceName(s.name)}</h3>
-                        <p className="text-slate-600 text-xs leading-relaxed mb-5 line-clamp-3">
+                        <h3 className="text-lg font-black text-slate-900 group-hover:text-amber-700 transition-colors duration-200 mb-2">{getTranslatedServiceName(s.name)}</h3>
+                        <p className="text-slate-500 text-xs leading-relaxed mb-5 line-clamp-3 font-medium">
                           {getTranslatedServiceDesc(s.description)}
                         </p>
                       </div>
 
-                      {/* Fee Calculator Break down */}
-                      <div className="border-t border-slate-100 pt-4 space-y-1 bg-slate-50 p-3 rounded-lg text-xs font-mono">
-                        <div className="flex justify-between text-slate-400">
-                          <span>{lang === 'ar' ? 'الرسوم الحكومية للدولة:' : 'Gov Fees:'}</span>
-                          <span className="font-bold text-slate-900 text-left">
+                      {/* Fee Calculator Break down with improved border and contrast */}
+                      <div className="border border-slate-150 mt-4 space-y-2.5 bg-slate-50/75 p-3.5 rounded-xl text-xs font-mono">
+                        <div className="flex justify-between text-slate-500">
+                          <span className="font-sans font-bold">{lang === 'ar' ? 'الرسوم الحكومية للدولة:' : 'Gov Fees:'}</span>
+                          <span className="font-extrabold text-slate-900 text-left">
                             {s.govFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {selectedCountry.code !== 'SA' && (
+                              <span className="text-[10px] text-emerald-600 font-sans font-bold block">
+                                (≈ {convertSARToCountryCurrency(s.govFee)} {selectedCountry.currencySymbol})
+                              </span>
+                            )}
                             {showUSDPrice && (
                               <span className="text-[10px] text-slate-500 font-sans font-normal block">
                                 (${convertSARtoUSD(s.govFee)} USD)
@@ -5034,10 +4927,16 @@ export default function App() {
                             )}
                           </span>
                         </div>
-                        <div className="flex justify-between text-slate-400">
-                          <span>{lang === 'ar' ? 'أتعاب سما المملكة:' : 'Sama Al-Mamlaka Fee:'}</span>
-                          <span className="font-bold text-slate-900 text-left">
+                        
+                        <div className="flex justify-between text-slate-500 pt-1.5 border-t border-slate-200/50">
+                          <span className="font-sans font-bold">{lang === 'ar' ? 'أتعاب سما المملكة:' : 'Sama Al-Mamlaka Fee:'}</span>
+                          <span className="font-extrabold text-slate-900 text-left">
                             {s.officeFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {selectedCountry.code !== 'SA' && (
+                              <span className="text-[10px] text-emerald-600 font-sans font-bold block">
+                                (≈ {convertSARToCountryCurrency(s.officeFee)} {selectedCountry.currencySymbol})
+                              </span>
+                            )}
                             {showUSDPrice && (
                               <span className="text-[10px] text-slate-500 font-sans font-normal block">
                                 (${convertSARtoUSD(s.officeFee)} USD)
@@ -5045,10 +4944,16 @@ export default function App() {
                             )}
                           </span>
                         </div>
-                        <div className="flex justify-between text-slate-400">
-                          <span>{lang === 'ar' ? 'ضريبة القيمة المضافة (15%):' : 'VAT (15%):'}</span>
-                          <span className="font-bold text-slate-900 text-left">
+
+                        <div className="flex justify-between text-slate-500 pt-1.5 border-t border-slate-200/50">
+                          <span className="font-sans font-semibold">{lang === 'ar' ? 'ضريبة القيمة المضافة (15%):' : 'VAT (15%):'}</span>
+                          <span className="font-extrabold text-slate-900 text-left">
                             {srvTax.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {selectedCountry.code !== 'SA' && (
+                              <span className="text-[10px] text-emerald-600 font-sans font-bold block">
+                                (≈ {convertSARToCountryCurrency(srvTax)} {selectedCountry.currencySymbol})
+                              </span>
+                            )}
                             {showUSDPrice && (
                               <span className="text-[10px] text-slate-500 font-sans font-normal block">
                                 (${convertSARtoUSD(srvTax)} USD)
@@ -5056,12 +4961,19 @@ export default function App() {
                             )}
                           </span>
                         </div>
-                        <div className="flex justify-between font-bold text-amber-800 border-t border-slate-200 pt-1.5 mt-1.5 text-xs">
-                          <span className="font-sans">{lang === 'ar' ? 'الإجمالي التقريبي:' : 'Total Cost:'}</span>
-                          <span className="text-left">
+
+                        {/* Highly emphasized grand total block with accent color */}
+                        <div className="flex justify-between items-center font-bold text-amber-950 bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20 pt-2 pb-2 mt-2 text-xs">
+                          <span className="font-sans font-extrabold">{lang === 'ar' ? 'الإجمالي التقريبى:' : 'Total Cost:'}</span>
+                          <span className="text-left font-extrabold">
                             {srvTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                            {selectedCountry.code !== 'SA' && (
+                              <span className="text-[10px] text-emerald-700 font-sans font-black block">
+                                (≈ {convertSARToCountryCurrency(srvTotal)} {selectedCountry.currencySymbol})
+                              </span>
+                            )}
                             {showUSDPrice && (
-                              <span className="text-[11px] text-amber-700 font-sans font-black block">
+                              <span className="text-[10px] text-amber-700 font-sans font-black block">
                                 (${convertSARtoUSD(srvTotal)} USD)
                               </span>
                             )}
@@ -5071,7 +4983,7 @@ export default function App() {
 
                       {/* Linked Payment Methods representing service-specific billing */}
                       <div className={`mt-3.5 space-y-1 select-none ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
-                        <span className="text-[10px] text-slate-400 block font-bold">{lang === 'ar' ? 'طرق الدفع المشمولة بالسداد:' : 'Supported Payment Methods:'}</span>
+                        <span className="text-[9px] text-slate-400 block font-bold">{lang === 'ar' ? 'طرق الدفع المشمولة بالسداد:' : 'Supported Payment Methods:'}</span>
                         <div className="flex flex-wrap gap-1 justify-start leading-none">
                           {s.paymentMethods && s.paymentMethods.length > 0 ? (
                             s.paymentMethods.map(pmId => {
@@ -5080,7 +4992,7 @@ export default function App() {
                               return (
                                 <span 
                                   key={pmId} 
-                                  className="text-[10px] font-black px-1.5 py-0.5 rounded border bg-slate-50 border-slate-200 text-slate-700 block hover:bg-slate-100 transition-colors"
+                                  className="text-[9px] font-extrabold px-2 py-1 rounded-md border bg-slate-50/80 border-slate-200 text-slate-700 block hover:bg-slate-100 transition-colors"
                                   title={found.name}
                                 >
                                   {found.badge}
@@ -5088,31 +5000,31 @@ export default function App() {
                               );
                             })
                           ) : (
-                            <span className="text-[9px] text-slate-500 font-bold bg-slate-150 py-0.5 px-2 rounded">
+                            <span className="text-[9px] text-slate-500 font-bold bg-slate-200 px-2 py-1 rounded-md">
                               {lang === 'ar' ? 'التحويل البنكي المعتمد 🏦' : 'Official Bank Transfer 🏦'}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Floating actions */}
-                      <div className="mt-4 pt-1 flex justify-between gap-1">
+                      {/* Floating actions upgraded with luxurious aesthetics */}
+                      <div className="mt-5 pt-1 flex justify-between gap-2">
                         <button
                           onClick={() => {
                             setSelectedServiceId(s.id);
                             // Scroll to form smoothly
                             document.getElementById('booking-anchor')?.scrollIntoView({ behavior: 'smooth' });
                           }}
-                          className="flex-1 bg-slate-950 hover:bg-slate-850 text-white py-2 rounded text-xs font-extrabold text-center transition-colors"
+                          className="flex-1 bg-slate-950 text-amber-500 hover:text-amber-400 hover:bg-slate-900 border border-slate-950 py-2.5 rounded-xl text-xs font-black text-center transition-all cursor-pointer flex items-center justify-center gap-1 hover:shadow-md active:scale-98"
                         >
                           {lang === 'ar' ? 'اطلب الخدمة الآن' : 'Request Service Now'}
                         </button>
                         <button
                           onClick={() => setInfoPopupService(s)}
-                          className="px-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-xs transition-colors border border-slate-200"
+                          className="px-3 bg-slate-100 hover:bg-slate-250 text-slate-700 rounded-xl text-xs transition-colors border border-slate-200 flex items-center justify-center cursor-pointer hover:shadow-xs active:scale-98"
                           title={lang === 'ar' ? 'تفاصيل البنود والخطوات' : 'Details & Steps'}
                         >
-                          <Info className="w-4 h-4" />
+                          <Info className="w-4.5 h-4.5" />
                         </button>
                       </div>
                     </div>
@@ -5214,7 +5126,22 @@ export default function App() {
                             </span>
                           )}
                         </div>
-                        <div className="relative">
+                        <div className="flex gap-2">
+                          <select
+                            value={selectedCountry.code}
+                            onChange={(e) => {
+                              const match = MIDDLE_EAST_COUNTRIES.find(c => c.code === e.target.value);
+                              if (match) setSelectedCountry(match);
+                            }}
+                            className="bg-slate-50 border border-slate-300 rounded-lg px-2 text-slate-850 text-xs font-bold focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 select-none cursor-pointer"
+                            title={lang === 'ar' ? 'رمز الدولة' : 'Country Code'}
+                          >
+                            {MIDDLE_EAST_COUNTRIES.map(c => (
+                              <option key={c.code} value={c.code}>
+                                {c.flag} +{c.phoneCode}
+                              </option>
+                            ))}
+                          </select>
                           <input 
                             type="text" 
                             value={clientPhone}
@@ -5223,8 +5150,8 @@ export default function App() {
                               setClientPhone(e.target.value);
                               if (!clientPhoneTouched) setClientPhoneTouched(true);
                             }}
-                            placeholder={lang === 'ar' ? 'مثال: 0501234567 أو +966501234567' : 'e.g. +966501234567 or 0501234567'} 
-                            className={`w-full p-3 border rounded-lg focus:outline-none focus:ring-1 font-mono shadow-sm text-sm transition-all duration-150 text-slate-900 font-semibold bg-white placeholder-slate-400 ${
+                            placeholder={lang === 'ar' ? `بدون مفتاح (مثال: 5XXXXXXXX) أو بمفتاح: +${selectedCountry.phoneCode}XXXXXXXX` : `e.g. +${selectedCountry.phoneCode}5XXXXXXXX`} 
+                            className={`flex-1 p-3 border rounded-lg focus:outline-none focus:ring-1 font-mono shadow-sm text-sm transition-all duration-150 text-slate-900 font-semibold bg-white placeholder-slate-400 ${
                               !clientPhoneTouched 
                                 ? 'border-slate-300 focus:border-amber-500 focus:ring-amber-500/30'
                                 : getClientPhoneError(clientPhone)
@@ -5232,13 +5159,13 @@ export default function App() {
                                   : 'border-emerald-500 bg-emerald-50/10 focus:border-emerald-600 focus:ring-emerald-600/30'
                             }`}
                           />
-                          {clientPhoneTouched && getClientPhoneError(clientPhone) && (
-                            <p className="text-[11px] text-red-600 font-bold mt-1.5 flex items-start gap-1 p-2 bg-red-50/50 rounded-lg border border-red-150 animate-fade-in transition-all">
-                              <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
-                              <span>{lang === 'ar' ? getClientPhoneError(clientPhone) : 'Invalid phone format; please enter a valid mobile number with country code.'}</span>
-                            </p>
-                          )}
                         </div>
+                        {clientPhoneTouched && getClientPhoneError(clientPhone) && (
+                          <p className="text-[11px] text-red-600 font-bold mt-1.5 flex items-start gap-1 p-2 bg-red-50/50 rounded-lg border border-red-150 animate-fade-in transition-all">
+                            <AlertCircle className="w-3.5 h-3.5 text-red-600 flex-shrink-0 mt-0.5" />
+                            <span>{lang === 'ar' ? getClientPhoneError(clientPhone) : 'Invalid phone format; please enter a valid mobile number.'}</span>
+                          </p>
+                        )}
                       </div>
 
                       {/* Select core service Category block */}
@@ -5272,11 +5199,18 @@ export default function App() {
                             }`}
                           >
                             <option value="">{lang === 'ar' ? 'اختر الخدمة الإجرائية...' : 'Choose requested service...'}</option>
-                            {services.map(s => (
-                              <option key={s.id} value={s.id}>
-                                {getTranslatedServiceName(s.name)} ({lang === 'ar' ? 'أتعاب:' : 'Fee:'} {s.officeFee} {lang === 'ar' ? 'ر.س' : 'SAR'}{showUSDPrice ? ` / $${convertSARtoUSD(s.officeFee)} USD` : ''} + {lang === 'ar' ? 'رسوم جهة:' : 'Gov Fee:'} {s.govFee} {lang === 'ar' ? 'ر.س' : 'SAR'}{showUSDPrice ? ` / $${convertSARtoUSD(s.govFee)} USD` : ''})
-                              </option>
-                            ))}
+                             {services.map(s => {
+                               const localSrvTax = s.officeFee * 0.15;
+                               const localTotal = s.govFee + s.officeFee + localSrvTax;
+                               return (
+                                 <option key={s.id} value={s.id}>
+                                   {getTranslatedServiceName(s.name)} (
+                                     {lang === 'ar' ? 'الإجمالي:' : 'Total:'} {localTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                                     {selectedCountry.code !== 'SA' ? ` ≈ ${convertSARToCountryCurrency(localTotal)} ${selectedCountry.currencySymbol}` : ''}
+                                   )
+                                 </option>
+                               );
+                             })}
                           </select>
                           {selectedServiceTouched && getSelectedServiceError(selectedServiceId) && (
                             <p className="text-[11px] text-red-600 font-bold mt-1.5 flex items-start gap-1 p-2 bg-red-50/50 rounded-lg border border-red-150 animate-fade-in transition-all">
@@ -5319,6 +5253,117 @@ export default function App() {
                         </div>
                       </div>
                     </div>
+
+                    {/* Core Advance Payment Requirement Block */}
+                    {(() => {
+                      const selectedSrv = services.find(s => s.id === selectedServiceId);
+                      if (!selectedSrv) return null;
+                      
+                      const srvTax = selectedSrv.officeFee * 0.15;
+                      const srvTotal = selectedSrv.govFee + selectedSrv.officeFee + srvTax;
+                      const halfTotal = srvTotal / 2;
+                      
+                      return (
+                        <div className="bg-amber-500/5 hover:bg-amber-500/10 border-2 border-amber-500/20 p-4 rounded-xl space-y-3 text-right font-sans transition-all">
+                          <div className="flex items-center gap-2 border-b border-amber-500/10 pb-2">
+                            <Coins className="w-4 h-4 text-amber-600 flex-shrink-0 animate-bounce" />
+                            <span className="text-xs font-black text-amber-950">
+                              {lang === 'ar' ? 'شرط الدفع المسبق الإلزامي للبدء في المعاملة:' : 'Mandatory Advance Payment Condition:'}
+                            </span>
+                          </div>
+                          
+                          <p className="text-[10.5px] text-slate-600 leading-relaxed font-semibold">
+                            {lang === 'ar' 
+                              ? 'بموجب ضوابط العمل بمكتب سما المملكة، يلزم تسوية كامل الرسوم الإدارية مقدماً أو نصفها للبدء في معالجة طلبك ورفع المعاملة تلقائياً لمقدم الخدمة:' 
+                              : 'Under official Sama Al-Mamlaka rules, transaction processing starts only after full payment or a 50% advance deposit is cleared:'}
+                          </p>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {/* Full Payment Card */}
+                            <button
+                              type="button"
+                              onClick={() => setPaymentCondition('full')}
+                              className={`p-3 rounded-xl border-2 text-right flex flex-col justify-between transition-all duration-150 cursor-pointer ${
+                                paymentCondition === 'full'
+                                  ? 'border-amber-500 bg-white shadow-3xs ring-1 ring-amber-500/20'
+                                  : 'border-slate-200 bg-white hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-[11px] font-black text-slate-800">
+                                  {lang === 'ar' ? 'سداد الرسوم كاملة مقدمًا (100%)' : 'Full Advance Payment (100%)'}
+                                </span>
+                                <input
+                                  type="radio"
+                                  name="paymentPolicyOption"
+                                  checked={paymentCondition === 'full'}
+                                  onChange={() => setPaymentCondition('full')}
+                                  className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                                />
+                              </div>
+                              <div className="mt-2 text-right">
+                                <span className="text-[9px] text-slate-400 block font-bold">
+                                  {lang === 'ar' ? 'المبلغ المطلوب للبدء الفوري:' : 'Advance amount required to start:'}
+                                </span>
+                                <strong className="text-amber-800 font-mono text-xs block mt-0.5 font-bold">
+                                  {srvTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                                  {selectedCountry.code !== 'SA' && (
+                                    <span className="text-[10px] text-slate-500 font-sans block font-semibold">
+                                      ≈ {convertSARToCountryCurrency(srvTotal)} {selectedCountry.currencySymbol}
+                                    </span>
+                                  )}
+                                </strong>
+                              </div>
+                            </button>
+
+                            {/* Half Payment Card */}
+                            <button
+                              type="button"
+                              onClick={() => setPaymentCondition('half')}
+                              className={`p-3 rounded-xl border-2 text-right flex flex-col justify-between transition-all duration-150 cursor-pointer ${
+                                paymentCondition === 'half'
+                                  ? 'border-amber-500 bg-white shadow-3xs ring-1 ring-amber-500/20'
+                                  : 'border-slate-200 bg-white hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="flex justify-between items-center w-full">
+                                <span className="text-[11px] font-black text-slate-800">
+                                  {lang === 'ar' ? 'سداد نصف الرسوم مقدمًا (50%)' : 'Half Advance Payment (50%)'}
+                                </span>
+                                <input
+                                  type="radio"
+                                  name="paymentPolicyOption"
+                                  checked={paymentCondition === 'half'}
+                                  onChange={() => setPaymentCondition('half')}
+                                  className="accent-amber-600 cursor-pointer w-3.5 h-3.5"
+                                />
+                              </div>
+                              <div className="mt-2 text-right">
+                                <span className="text-[9px] text-slate-400 block font-bold">
+                                  {lang === 'ar' ? 'المبلغ المطلوب للبدء الفوري:' : 'Advance amount required to start:'}
+                                </span>
+                                <strong className="text-amber-800 font-mono text-xs block mt-0.5 font-bold">
+                                  {halfTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
+                                  {selectedCountry.code !== 'SA' && (
+                                    <span className="text-[10px] text-slate-500 font-sans block font-semibold">
+                                      ≈ {convertSARToCountryCurrency(halfTotal)} {selectedCountry.currencySymbol}
+                                    </span>
+                                  )}
+                                </strong>
+                              </div>
+                            </button>
+                          </div>
+                          
+                          <div className="bg-amber-500/10 px-3 py-2 rounded-lg border border-amber-250 text-right leading-normal font-bold">
+                            <p className="text-[10px] text-amber-950">
+                              {lang === 'ar'
+                                ? `⚠️ تنبيه للمستفيد: يجب تسوية مبلغ الدفعة المقدمة البالغ (${paymentCondition === 'full' ? srvTotal.toFixed(2) : halfTotal.toFixed(2)} ر.س) لإثبات الجدية وتمرير المعاملة.`
+                                : `⚠️ Notice: This request requires an advance payment of (${paymentCondition === 'full' ? srvTotal.toFixed(2) : halfTotal.toFixed(2)} SAR) to immediately trigger admin clearance.`}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1.5">{lang === 'ar' ? 'أي ملاحظات إضافية، مستندات، أو متطلبات خاصة:' : 'Additional notes, documents or special requests:'}</label>
@@ -5448,7 +5493,7 @@ export default function App() {
                       setSearchPhone(e.target.value);
                       setHasSearched(false);
                     }}
-                    placeholder={lang === 'ar' ? 'مثال رقم الجوال: 0501234567 أو +96650...' : 'e.g. Mobile number: +9665...' }
+                    placeholder={lang === 'ar' ? `مثال رقم الجوال: +${selectedCountry.phoneCode}...` : `e.g. Mobile number: +${selectedCountry.phoneCode}...` }
                     className="flex-1 p-3 border-2 border-slate-300 rounded focus:outline-none focus:border-slate-800 font-mono text-sm text-slate-900 font-bold bg-white placeholder-slate-400"
                   />
                   <button
@@ -5610,16 +5655,22 @@ export default function App() {
                             {/* Global Payment Status Panel */}
                             {(() => {
                               const currentSrv = services.find(s => s.id === b.serviceId || s.name.trim() === b.serviceName.trim());
-                              const totalSrvAmount = currentSrv ? (currentSrv.govFee + currentSrv.officeFee * 1.15) : 345.00;
+                              const fullAmt = currentSrv ? (currentSrv.govFee + currentSrv.officeFee * 1.15) : 345.00;
+                              const totalSrvAmount = b.paymentOption === 'half' ? (fullAmt / 2) : fullAmt;
 
                               if (b.isPaid) {
                                 return (
                                   <div className="bg-emerald-500/5 border border-emerald-200 p-3 rounded-lg text-emerald-950 text-xs mb-4 font-sans space-y-1">
                                     <div className="flex items-center gap-1.5 font-bold">
                                       <CheckCircle2 className="w-4.5 h-4.5 text-emerald-600" />
-                                      <span>{lang === 'ar' ? 'حالة الرسوم: تم سداد وإيداع التكلفة أونلاين المباشرة' : 'Fees Status: Paid online directly'}</span>
+                                      <span>
+                                        {lang === 'ar' 
+                                          ? `حالة الرسوم: تم سداد وإيداع الدفعة أونلاين (${b.paymentOption === 'half' ? 'نصف الرسوم 50%' : 'كامل الرسوم 100%'})` 
+                                          : `Fees Status: Paid online (${b.paymentOption === 'half' ? '50% Half Deposit' : '100% Full Payment'})`}
+                                      </span>
                                     </div>
                                     <p className="text-[10px] text-slate-600 font-sans">
+                                      {lang === 'ar' ? 'القيمة المسددة:' : 'Paid Amount:'} <strong className="text-emerald-800 font-mono">{(b.paidAmount || totalSrvAmount).toFixed(2)} ر.س</strong> • 
                                       {lang === 'ar' ? 'بلد السداد:' : 'Payment Location:'} <strong className="text-slate-900">{b.paymentCountry || (lang === 'ar' ? "سداد دولي موثق" : "Verified Int'l Payment")}</strong> • 
                                       {lang === 'ar' ? 'المرجع البنكي:' : 'Reference ID:'} <span className="font-mono text-slate-800">{b.paymentRef}</span> • 
                                       {lang === 'ar' ? 'البوابة المعتمدة:' : 'Approved Gateway:'} <strong className="text-slate-900">{b.paymentMethod || (lang === 'ar' ? "بطاقة ائتمانية" : "Credit Card")}</strong>
@@ -5633,14 +5684,18 @@ export default function App() {
                                   <div className="flex justify-between items-center">
                                     <span className="text-slate-500 flex items-center gap-1 font-bold">
                                       <Coins className="w-3.5 h-3.5 text-amber-600" />
-                                      <span>{lang === 'ar' ? 'الرسوم المستحقة:' : 'Due Fees:'}</span>
+                                      <span>
+                                        {lang === 'ar' 
+                                          ? `الرسوم المستحقة (${b.paymentOption === 'half' ? 'نصف الرسوم 50% مقدمًا' : 'كامل الرسوم 100%'}):` 
+                                          : `Fees Due (${b.paymentOption === 'half' ? '50% Advance half-payment' : '100% Full payment'}):`}
+                                      </span>
                                     </span>
                                     <strong className="text-slate-950 font-mono font-black">{totalSrvAmount.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}</strong>
                                   </div>
                                   <p className="text-[10px] text-slate-500 leading-normal font-medium">
                                     {lang === 'ar' 
-                                      ? 'يرجى تسوية رسوم المعاملة الإدارية والضريبية لتسهيل إجراءات الرفع المباشر مع سما المملكة.' 
-                                      : 'Please settle administrative and tax fees to facilitate direct clearance procedures with Sama Al-Mamlaka.'}
+                                      ? `بموجب ضوابط العمل بمكتب سما المملكة، يلزم سداد (${b.paymentOption === 'half' ? 'الدون-بيمينت أو نصف القيمة' : 'كامل القيمة أونلاين'}) كأولوية قاطعة لبدء المتابعة وتفويض الأوراق.` 
+                                      : `Sama Al-Mamlaka policy requires making the requested up-front payment of (${b.paymentOption === 'half' ? '50% half' : '100% full'}) to facilitate official clearance.`}
                                   </p>
                                   
                                   <button
@@ -5652,7 +5707,11 @@ export default function App() {
                                     className="w-full bg-slate-950 text-amber-500 hover:text-amber-400 hover:bg-slate-850 border border-slate-900 transition py-2 text-[10.5px] rounded-lg font-black shadow-3xs hover:shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer"
                                   >
                                     <CreditCard className="w-3.5 h-3.5 text-amber-500" />
-                                    <span>{lang === 'ar' ? 'سداد الرسوم المباشر أونلاين (قنوات مادا، فيزا، فوري، PayPal)' : 'Pay Due Fees Online (Mada, Visa, PayPal)'}</span>
+                                    <span>
+                                      {lang === 'ar' 
+                                        ? `تسوية الدفعة المقدمة المطلوبة (${totalSrvAmount.toFixed(2)} ر.س) أونلاين الآن` 
+                                        : `Pay Required Advance Amount (${totalSrvAmount.toFixed(2)} SAR) Online Now`}
+                                    </span>
                                   </button>
                                 </div>
                               );
@@ -6190,8 +6249,24 @@ export default function App() {
                 <p className="text-slate-500 text-xs mt-1">نظام حسابي ورقابي عالي الكفاءة يدعم إحصاءات المعاملات والفوترة وفق معايير ١٥% نسبة ضريبية مضافة.</p>
               </div>
 
-              {/* Toolbar Actions */}
-              <div className="flex gap-2.5 flex-wrap">
+              {/* Toolbar Actions (Responsive Selector) */}
+              <div className="w-full md:hidden mb-2">
+                <label className="block text-slate-700 font-extrabold text-[11px] mb-1 font-sans">القسم النشط بالبوابة الموحدة:</label>
+                <select
+                  value={adminTab}
+                  onChange={(e) => setAdminTab(e.target.value as any)}
+                  className="w-full p-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-xs text-slate-900 font-bold focus:outline-none focus:ring-2 focus:ring-slate-500 cursor-pointer text-right transition-all duration-150"
+                >
+                  <option value="stats">⏱️ التقارير والإحصاءات المالية</option>
+                  <option value="requests">📥 الطلبات الواردة ({bookings.filter(b => b.status === 'pending').length})</option>
+                  <option value="ledger">🗄️ المحاسبة والقيود المالية للدولة والمكتب</option>
+                  <option value="services">⚙️ إدارة دليل الخدمات وأسعار العمليات</option>
+                  <option value="whatsapp">💬 إشعارات واتساب الفورية {whatsappLogs.length > 0 ? `(${whatsappLogs.length})` : ''}</option>
+                  <option value="jobs">💼 إدارة التوظيف والوظائف ({jobVacancies.length})</option>
+                </select>
+              </div>
+
+              <div className="hidden md:flex gap-2.5 flex-wrap">
                 <button
                   onClick={() => setAdminTab('stats')}
                   className={`px-3 py-1.5 rounded text-xs font-bold transition-all ${adminTab === 'stats' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
@@ -6607,255 +6682,468 @@ export default function App() {
                       )}
                     </div>
                   ) : (
-                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[750px] text-right text-xs">
-                          <thead className="bg-[#f8fafc] border-b border-slate-200 text-slate-700 font-bold">
-                            <tr>
-                              <th className="p-4">العميل المستفيد وجواله</th>
-                              <th className="p-4">الخدمة المطلوبة</th>
-                              <th className="p-4">تاريخ المرفق</th>
-                              <th className="p-4 text-center">الوضعية الحالية للطلب</th>
-                              <th className="p-4 text-left">العمليات الإدارية الفورية</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-150">
-                            {displayedBookings.map(b => (
-                              <tr key={b.id} className="hover:bg-slate-50 transition-colors">
-                                <td className="p-4">
-                                  <strong className="text-slate-900 block text-sm font-sans">{b.clientName}</strong>
-                                  <span className="text-slate-500 font-mono tracking-wide">{b.phoneNumber}</span>
-                                  
-                                  {/* Client Feedback Rating View */}
-                                  {b.rating && (
-                                    <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-slate-900 w-full sm:max-w-sm space-y-1">
-                                      <div className="flex items-center gap-1 font-sans font-extrabold text-[11px] text-amber-900 leading-none">
-                                        <span>⭐ تقييم جودة الخدمة:</span>
-                                        <div className="flex items-center text-xs text-amber-500 mr-1">
-                                          {Array.from({ length: 5 }).map((_, idx) => (
-                                            <span key={idx} className="leading-none">
-                                              {idx < (b.rating || 0) ? '★' : '☆'}
-                                            </span>
-                                          ))}
+                    <div className="space-y-4">
+                      {/* Desktop Table view (Visible on md and larger) */}
+                      <div className="hidden md:block bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <div className="overflow-x-auto">
+                          <table className="w-full min-w-[750px] text-right text-xs">
+                            <thead className="bg-[#f8fafc] border-b border-slate-200 text-slate-700 font-bold">
+                              <tr>
+                                <th className="p-4">العميل المستفيد وجواله</th>
+                                <th className="p-4">الخدمة المطلوبة</th>
+                                <th className="p-4">تاريخ المرفق</th>
+                                <th className="p-4 text-center">الوضعية الحالية للطلب</th>
+                                <th className="p-4 text-left">العمليات الإدارية الفورية</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-150">
+                              {displayedBookings.map(b => (
+                                <tr key={b.id} className="hover:bg-slate-50 transition-colors">
+                                  <td className="p-4">
+                                    <strong className="text-slate-900 block text-sm font-sans">{b.clientName}</strong>
+                                    <span className="text-slate-500 font-mono tracking-wide">{b.phoneNumber}</span>
+                                    
+                                    {/* Client Feedback Rating View */}
+                                    {b.rating && (
+                                      <div className="mt-2 p-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-slate-900 w-full sm:max-w-sm space-y-1">
+                                        <div className="flex items-center gap-1 font-sans font-extrabold text-[11px] text-amber-900 leading-none">
+                                          <span>⭐ تقييم جودة الخدمة:</span>
+                                          <div className="flex items-center text-xs text-amber-500 mr-1">
+                                            {Array.from({ length: 5 }).map((_, idx) => (
+                                              <span key={idx} className="leading-none">
+                                                {idx < (b.rating || 0) ? '★' : '☆'}
+                                              </span>
+                                            ))}
+                                          </div>
+                                          <span className="text-[10px] font-mono font-black">({b.rating}/5)</span>
                                         </div>
-                                        <span className="text-[10px] font-mono font-black">({b.rating}/5)</span>
+                                        {b.ratingComment && (
+                                          <p className="text-[10px] text-slate-700 italic leading-snug">
+                                            "{b.ratingComment}"
+                                          </p>
+                                        )}
                                       </div>
-                                      {b.ratingComment && (
-                                        <p className="text-[10px] text-slate-700 italic leading-snug">
-                                          "{b.ratingComment}"
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
+                                    )}
 
-                                  {b.notes && (
-                                    <p className="text-[11px] text-slate-500 mt-1 max-w-sm font-sans line-clamp-2" title={b.notes}>
-                                      <strong>ملاحظات:</strong> {b.notes}
-                                    </p>
+                                    {b.notes && (
+                                      <p className="text-[11px] text-slate-500 mt-1 max-w-sm font-sans line-clamp-2" title={b.notes}>
+                                        <strong>ملاحظات:</strong> {b.notes}
+                                      </p>
+                                    )}
+                                    {b.attachments && b.attachments.length > 0 ? (
+                                      <div className="mt-1.5 space-y-1.5 text-right font-sans">
+                                        {b.attachments.map((att, attIdx) => (
+                                          <div key={attIdx} className="flex items-center gap-1.5 flex-wrap">
+                                            <button
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedViewBooking(b);
+                                                setSelectedAttachmentIndex(attIdx);
+                                              }}
+                                              className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded transition-colors"
+                                              title="اضغط لاستعراض أو معاينة هذا المستند المرفق بالطلب"
+                                            >
+                                              <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                              <span className="truncate max-w-[150px] sm:max-w-[200px]">المرفق {attIdx + 1}: {att.name}</span>
+                                              <span className="text-[9px] text-slate-400 font-mono">({att.size})</span>
+                                            </button>
+                                            <a
+                                              href={att.data}
+                                              download={att.name}
+                                              className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-955 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-1.5 py-0.5 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                              title="تنزيل هذا المستند مباشرة"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <Download className="w-3 h-3" />
+                                              <span>تنزيل</span>
+                                            </a>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      b.attachedFileName && (
+                                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedViewBooking(b);
+                                              setSelectedAttachmentIndex(0);
+                                            }}
+                                            className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded transition-colors"
+                                            title="اضغط لاستعراض أو معاينة المستند المرفق بالطلب"
+                                          >
+                                            <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                            <span className="truncate max-w-[200px]">المرفق: {b.attachedFileName}</span>
+                                            <span className="text-[9px] text-slate-400 font-mono">({b.attachedFileSize})</span>
+                                          </button>
+                                          {b.attachedFileData && (
+                                            <a
+                                              href={b.attachedFileData}
+                                              download={b.attachedFileName}
+                                              className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-955 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
+                                              title="تنزيل المستند مباشرة"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <Download className="w-3 h-3" />
+                                              <span>تنزيل المرفق</span>
+                                            </a>
+                                          )}
+                                        </div>
+                                      )
+                                    )}
+
+                                    {/* Admin Comments Section */}
+                                    <div className="mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl max-w-sm text-right space-y-1.5 shadow-3xs" onClick={(e) => e.stopPropagation()}>
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10.5px] font-black text-slate-705 text-slate-700 flex items-center gap-1.5 font-sans">
+                                          <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
+                                          ملاحظات وتوجيهات الإدارة الرقابية الموحدة:
+                                        </span>
+                                        {b.adminComments ? (
+                                          <span className="text-[9px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-250 px-1.5 py-0.5 rounded-full font-sans">
+                                            مستندة ✅
+                                          </span>
+                                        ) : (
+                                          <span className="text-[9px] font-extrabold bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-full font-sans">
+                                            لا تعليق ✉️
+                                          </span>
+                                        )}
+                                      </div>
+                                      <textarea
+                                        key={`${b.id}-${b.adminComments || ''}`}
+                                        defaultValue={b.adminComments || ''}
+                                        onBlur={(e) => handleUpdateAdminComments(b.id, e.target.value)}
+                                        placeholder="أضف توجيهات الموظفين وملاحظات المعاملة الإدارية الخاصة بالطلب..."
+                                        rows={2}
+                                        className="w-full text-[11px] text-slate-900 placeholder:text-slate-400 bg-white border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition font-sans leading-relaxed text-right"
+                                      />
+                                      <p className="text-[9px] text-slate-400 leading-none">
+                                        * تدعم المزامنة السحابية والحفظ التلقائي بمجرد الكتابة والضغط خارج المربع.
+                                      </p>
+                                    </div>
+                                  </td>
+                                  <td className="p-4">
+                                    <div className="flex flex-col gap-1 max-w-[180px]">
+                                      <select
+                                        value={b.serviceId}
+                                        onChange={(e) => handleUpdateBookingService(b.id, e.target.value)}
+                                        className="p-1.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 cursor-pointer font-sans shadow-3xs"
+                                        title="ربط وتعديل ارتباط هذا الطلب بخدمة أخرى من دليل الخدمات لتتبع أدائه المالي والعملياتي"
+                                      >
+                                        {services.map(s => (
+                                          <option key={s.id} value={s.id}>
+                                            {s.name} ({s.officeFee} ر.س)
+                                          </option>
+                                        ))}
+                                        {!services.some(s => s.id === b.serviceId) && (
+                                          <option value={b.serviceId} disabled>
+                                            {b.serviceName} (غير ملتصق بالدليل)
+                                          </option>
+                                        )}
+                                      </select>
+                                      <span className="text-[9px] text-slate-400 font-sans block">
+                                        معرّف الحزمة: <span className="font-mono text-[8px] bg-slate-100 px-1 py-0.5 rounded text-slate-600">{b.serviceId || 'srv-none'}</span>
+                                      </span>
+                                      <div className="mt-1.5 p-1 bg-amber-500/5 border border-amber-500/10 rounded flex items-center justify-between text-[10px] font-sans font-extrabold text-amber-900">
+                                        <span>سياسة الدفع المسبق:</span>
+                                        <span className="bg-amber-500/10 px-1.5 py-0.5 rounded text-[9px] tracking-tight">
+                                          {b.paymentOption === 'half' ? 'نصف القيمة (50%) 🌓' : 'كامل القيمة (100%) 💯'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td className="p-4 font-mono text-slate-500 text-xs">
+                                    {new Date(b.date).toLocaleDateString('ar-SA')} 
+                                    <span className="block text-[10px] text-slate-400 mt-0.5">
+                                      {new Date(b.date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </td>
+                                  <td className="p-4 text-center">
+                                    {(() => {
+                                      const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
+                                      return (
+                                        <div className="flex flex-col items-center gap-1">
+                                          <select
+                                            value={b.status}
+                                            onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as any)}
+                                            className={`p-1.5 text-xs font-bold rounded border bg-white focus:outline-none ${
+                                              b.status === 'completed' ? 'text-emerald-800 border-emerald-300 bg-emerald-50' :
+                                              b.status === 'processing' ? 'text-blue-800 border-blue-300 bg-blue-50' :
+                                              b.status === 'cancelled' ? 'text-red-800 border-red-300 bg-red-50' :
+                                              'text-amber-850 border-amber-300 bg-amber-50'
+                                            }`}
+                                          >
+                                            <option value="pending">قيد الانتظار لمراجعة الإدارة</option>
+                                            <option value="processing">تحت الإخراج والتعقيب</option>
+                                            <option value="completed">مكتملة ومستحقة الدفع</option>
+                                            <option value="cancelled">ملغية ومسحوبة</option>
+                                          </select>
+                                          {b.status === 'processing' && (
+                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                              daysInProcessing > 7 
+                                                ? 'bg-rose-100 text-rose-800 border border-rose-250 animate-pulse' 
+                                                : 'bg-slate-105 text-slate-600'
+                                            }`}>
+                                              {daysInProcessing} {daysInProcessing === 1 ? 'يوم' : daysInProcessing === 2 ? 'يومان' : 'أيام'} قيد المعالجة
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })()}
+                                  </td>
+                                  <td className="p-4 text-left space-x-reverse space-x-1.5">
+                                    {(() => {
+                                      const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
+                                      const isProcessingOver7Days = b.status === 'processing' && daysInProcessing > 7;
+                                      return (
+                                        <>
+                                          {isProcessingOver7Days && (
+                                            <button
+                                              type="button"
+                                              onClick={() => handleSendProcessingReminder(b)}
+                                              className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-955 px-2.5 py-1.5 rounded font-black text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer mr-1 ml-1 shadow-sm"
+                                              title="إرسال تذكير ومتابعة للعميل فوراً عبر واتساب لتجاوز الطلب 7 أيام"
+                                            >
+                                              <Send className="w-3 h-3 text-slate-950" />
+                                              <span>إرسال تذكير (WhatsApp)</span>
+                                            </button>
+                                          )}
+                                          <button
+                                            type="button"
+                                            onClick={() => handlePreFillTransactionFromBooking(b)}
+                                            className="bg-slate-950 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded font-black text-[11px] transition-colors"
+                                            title="ترحيل بيانات الطلب لإنشاء قيد مالي"
+                                          >
+                                            ترحيل لدفتر الفواتير المالية
+                                          </button>
+                                        </>
+                                      );
+                                    })()}
+                                    <button
+                                      onClick={() => {
+                                        if (window.confirm('هل تريد حذف سجل الطلب هذا نهائياً من أرشيف المراجعة؟')) {
+                                          const filtered = bookings.filter(item => item.id !== b.id);
+                                          setBookings(filtered);
+                                          // Delete from Firestore
+                                          deleteDoc(doc(db, 'bookings', b.id))
+                                            .catch(err => handleFirestoreError(err, OperationType.DELETE, `bookings/${b.id}`));
+                                        }
+                                      }}
+                                      className="p-1 px-1.5 text-red-600 hover:text-white hover:bg-red-600 border border-red-200 rounded transition-colors"
+                                      title="حذف من الأرشيف"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Mobile Cards View (Visible on screens smaller than md) */}
+                      <div className="block md:hidden space-y-4">
+                        {displayedBookings.map(b => {
+                          const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
+                          const isProcessingOver7Days = b.status === 'processing' && daysInProcessing > 7;
+                          return (
+                            <div key={b.id} className="bg-white p-4 rounded-xl border border-slate-205 shadow-sm space-y-3 font-sans text-right relative">
+                              {/* Customer Header Info & Quick Delete */}
+                              <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
+                                <div>
+                                  <strong className="text-slate-900 text-xs font-extrabold block">{b.clientName}</strong>
+                                  <span className="text-slate-500 font-mono text-[11px] tracking-wide block leading-none mt-1">{b.phoneNumber}</span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (window.confirm('هل تريد حذف سجل الطلب هذا نهائياً من أرشيف المراجعة؟')) {
+                                      const filtered = bookings.filter(item => item.id !== b.id);
+                                      setBookings(filtered);
+                                      deleteDoc(doc(db, 'bookings', b.id))
+                                        .catch(err => handleFirestoreError(err, OperationType.DELETE, `bookings/${b.id}`));
+                                    }
+                                  }}
+                                  className="p-1.5 text-red-600 hover:text-white hover:bg-red-600 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                                  title="حذف من الأرشيف"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+
+                              {/* Service Name & Status selectors */}
+                              <div className="grid grid-cols-1 gap-2.5 bg-slate-50 p-2.5 rounded-lg border border-slate-150">
+                                <div>
+                                  <label className="block text-[10px] text-slate-500 font-bold mb-1">الخدمة المعينة بالطلب:</label>
+                                  <select
+                                    value={b.serviceId}
+                                    onChange={(e) => handleUpdateBookingService(b.id, e.target.value)}
+                                    className="w-full p-2 text-xs font-bold rounded-md bg-white border border-slate-300 text-slate-800"
+                                  >
+                                    {services.map(s => (
+                                      <option key={s.id} value={s.id}>
+                                        {s.name} ({s.officeFee} ر.س)
+                                      </option>
+                                    ))}
+                                    {!services.some(s => s.id === b.serviceId) && (
+                                      <option value={b.serviceId} disabled>
+                                        {b.serviceName}
+                                      </option>
+                                    )}
+                                  </select>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[10px] text-slate-500 font-bold mb-1">وضعية وتحديث الحالة الحالية:</label>
+                                  <select
+                                    value={b.status}
+                                    onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as any)}
+                                    className={`w-full p-2 text-xs font-bold rounded-md border bg-white ${
+                                      b.status === 'completed' ? 'text-emerald-800 border-emerald-300 bg-emerald-50' :
+                                      b.status === 'processing' ? 'text-blue-800 border-blue-300 bg-blue-50' :
+                                      b.status === 'cancelled' ? 'text-red-800 border-red-300 bg-red-50' :
+                                      'text-amber-850 border-amber-300 bg-amber-50'
+                                    }`}
+                                  >
+                                    <option value="pending">⏳ قيد الانتظار لمراجعة الإدارة</option>
+                                    <option value="processing">⚙️ تحت الإخراج والتعقيب</option>
+                                    <option value="completed">✅ مكتملة ومستحقة الدفع</option>
+                                    <option value="cancelled">❌ ملغية ومسحوبة</option>
+                                  </select>
+                                </div>
+                              </div>
+
+                              {/* Date and Time / Duration info */}
+                              <div className="flex justify-between items-center text-[10.5px] text-slate-500 font-mono">
+                                <span>📅 {new Date(b.date).toLocaleDateString('ar-SA')} {new Date(b.date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                                {b.status === 'processing' && (
+                                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                                    daysInProcessing > 7 
+                                      ? 'bg-rose-100 text-rose-800 border border-rose-250 animate-pulse' 
+                                      : 'bg-slate-100 text-slate-600'
+                                  }`}>
+                                    {daysInProcessing} {daysInProcessing === 1 ? 'يوم' : daysInProcessing === 2 ? 'يومان' : 'أيام'} قيد المعالجة
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* Customer feedback rating */}
+                              {b.rating && (
+                                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-lg text-slate-900 space-y-1 text-xs">
+                                  <div className="flex items-center gap-1 font-extrabold text-[11px] text-amber-955">
+                                    <span>⭐ التقييم المباشر لجودة الخدمة:</span>
+                                    <span className="text-amber-600 font-mono">({b.rating}/5)</span>
+                                  </div>
+                                  {b.ratingComment && (
+                                    <p className="text-[11px] text-slate-705 italic font-sans leading-relaxed">"{b.ratingComment}"</p>
                                   )}
+                                </div>
+                              )}
+
+                              {/* Core notes details (if provided) */}
+                              {b.notes && (
+                                <p className="text-xs text-slate-600 font-semibold bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                                  <strong>ملاحظة العميل:</strong> {b.notes}
+                                </p>
+                              )}
+
+                              {/* Attachments & Files section */}
+                              {((b.attachments && b.attachments.length > 0) || b.attachedFileName) && (
+                                <div className="space-y-1.5 border-t border-slate-100 pt-2.5">
+                                  <span className="block text-[10px] font-black text-slate-700">📎 المستندات والمرفقات المتاحة:</span>
                                   {b.attachments && b.attachments.length > 0 ? (
-                                    <div className="mt-1.5 space-y-1.5 text-right font-sans">
+                                    <div className="flex flex-col gap-1.5">
                                       {b.attachments.map((att, attIdx) => (
-                                        <div key={attIdx} className="flex items-center gap-1.5 flex-wrap">
+                                        <div key={attIdx} className="flex items-center justify-between bg-slate-50/50 p-1.5 rounded-lg border border-slate-150 gap-2">
                                           <button
                                             type="button"
                                             onClick={() => {
                                               setSelectedViewBooking(b);
                                               setSelectedAttachmentIndex(attIdx);
                                             }}
-                                            className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded transition-colors"
-                                            title="اضغط لاستعراض أو معاينة هذا المستند المرفق بالطلب"
+                                            className="text-[10px] font-extrabold text-emerald-800 flex items-center gap-1 truncate text-right flex-1"
                                           >
                                             <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                                            <span className="truncate max-w-[150px] sm:max-w-[200px]">المرفق {attIdx + 1}: {att.name}</span>
-                                            <span className="text-[9px] text-slate-400 font-mono">({att.size})</span>
+                                            <span className="truncate">{att.name}</span>
                                           </button>
                                           <a
                                             href={att.data}
                                             download={att.name}
-                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-955 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-1.5 py-0.5 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
-                                            title="تنزيل هذا المستند مباشرة"
-                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-[10px] font-black text-slate-950 bg-amber-500 hover:bg-amber-600 p-1 px-2 rounded cursor-pointer flex items-center gap-1 flex-shrink-0 shadow-3xs"
                                           >
-                                            <Download className="w-3 h-3" />
-                                            <span>تنزيل</span>
+                                            <Download className="w-2.5 h-2.5" />
+                                            <span>تحميل</span>
                                           </a>
                                         </div>
                                       ))}
                                     </div>
                                   ) : (
                                     b.attachedFileName && (
-                                      <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+                                      <div className="flex items-center justify-between bg-slate-50/50 p-1.5 rounded-lg border border-slate-150 gap-2">
                                         <button
                                           type="button"
                                           onClick={() => {
                                             setSelectedViewBooking(b);
                                             setSelectedAttachmentIndex(0);
                                           }}
-                                          className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded transition-colors"
-                                          title="اضغط لاستعراض أو معاينة المستند المرفق بالطلب"
+                                          className="text-[10px] font-extrabold text-emerald-800 flex items-center gap-1 truncate text-right flex-1"
                                         >
                                           <Paperclip className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
-                                          <span className="truncate max-w-[200px]">المرفق: {b.attachedFileName}</span>
-                                          <span className="text-[9px] text-slate-400 font-mono">({b.attachedFileSize})</span>
+                                          <span className="truncate">{b.attachedFileName}</span>
                                         </button>
                                         {b.attachedFileData && (
                                           <a
                                             href={b.attachedFileData}
                                             download={b.attachedFileName}
-                                            className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-950 bg-amber-500 hover:bg-amber-600 border border-amber-600 px-2 py-1 rounded shadow-3xs hover:shadow-2xs transition-all cursor-pointer"
-                                            title="تنزيل المستند مباشرة"
-                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-[10px] font-black text-slate-950 bg-amber-500 hover:bg-amber-600 p-1 px-2 rounded cursor-pointer flex items-center gap-1 flex-shrink-0 shadow-3xs"
                                           >
-                                            <Download className="w-3 h-3" />
-                                            <span>تنزيل المرفق</span>
+                                            <Download className="w-2.5 h-2.5" />
+                                            <span>تنزيل</span>
                                           </a>
                                         )}
                                       </div>
                                     )
                                   )}
+                                </div>
+                              )}
 
-                                  {/* Admin Comments Section */}
-                                  <div className="mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl max-w-sm text-right space-y-1.5 shadow-3xs" onClick={(e) => e.stopPropagation()}>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-[10.5px] font-black text-slate-705 text-slate-700 flex items-center gap-1.5 font-sans">
-                                        <MessageSquare className="w-3.5 h-3.5 text-slate-500" />
-                                        ملاحظات وتوجيهات الإدارة الرقابية الموحدة:
-                                      </span>
-                                      {b.adminComments ? (
-                                        <span className="text-[9px] font-extrabold bg-emerald-50 text-emerald-800 border border-emerald-250 px-1.5 py-0.5 rounded-full font-sans">
-                                          مستندة ✅
-                                        </span>
-                                      ) : (
-                                        <span className="text-[9px] font-extrabold bg-slate-100 text-slate-500 border border-slate-200 px-1.5 py-0.5 rounded-full font-sans">
-                                          لا تعليق ✉️
-                                        </span>
-                                      )}
-                                    </div>
-                                    <textarea
-                                      key={`${b.id}-${b.adminComments || ''}`}
-                                      defaultValue={b.adminComments || ''}
-                                      onBlur={(e) => handleUpdateAdminComments(b.id, e.target.value)}
-                                      placeholder="أضف توجيهات الموظفين وملاحظات المعاملة الإدارية الخاصة بالطلب..."
-                                      rows={2}
-                                      className="w-full text-[11px] text-slate-900 placeholder:text-slate-400 bg-white border border-slate-200 rounded-lg p-2 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition font-sans leading-relaxed text-right"
-                                    />
-                                    <p className="text-[9px] text-slate-400 leading-none">
-                                      * تدعم المزامنة السحابية والحفظ التلقائي بمجرد الكتابة والضغط خارج المربع.
-                                    </p>
-                                  </div>
-                                </td>
-                                <td className="p-4">
-                                  <div className="flex flex-col gap-1 max-w-[180px]">
-                                    <select
-                                      value={b.serviceId}
-                                      onChange={(e) => handleUpdateBookingService(b.id, e.target.value)}
-                                      className="p-1.5 text-xs font-bold rounded-lg border border-slate-300 bg-white text-slate-800 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 cursor-pointer font-sans shadow-3xs"
-                                      title="ربط وتعديل ارتباط هذا الطلب بخدمة أخرى من دليل الخدمات لتتبع أدائه المالي والعملياتي"
-                                    >
-                                      {services.map(s => (
-                                        <option key={s.id} value={s.id}>
-                                          {s.name} ({s.officeFee} ر.س)
-                                        </option>
-                                      ))}
-                                      {!services.some(s => s.id === b.serviceId) && (
-                                        <option value={b.serviceId} disabled>
-                                          {b.serviceName} (غير ملتصق بالدليل)
-                                        </option>
-                                      )}
-                                    </select>
-                                    <span className="text-[9px] text-slate-400 font-sans block">
-                                      معرّف الحزمة: <span className="font-mono text-[8px] bg-slate-100 px-1 py-0.5 rounded text-slate-600">{b.serviceId || 'srv-none'}</span>
-                                    </span>
-                                  </div>
-                                </td>
-                                <td className="p-4 font-mono text-slate-500 text-xs">
-                                  {new Date(b.date).toLocaleDateString('ar-SA')} 
-                                  <span className="block text-[10px] text-slate-400 mt-0.5">
-                                    {new Date(b.date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}
-                                  </span>
-                                </td>
-                                <td className="p-4 text-center">
-                                  {(() => {
-                                    const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
-                                    return (
-                                      <div className="flex flex-col items-center gap-1">
-                                        <select
-                                          value={b.status}
-                                          onChange={(e) => handleUpdateBookingStatus(b.id, e.target.value as any)}
-                                          className={`p-1.5 text-xs font-bold rounded border bg-white focus:outline-none ${
-                                            b.status === 'completed' ? 'text-emerald-800 border-emerald-300 bg-emerald-50' :
-                                            b.status === 'processing' ? 'text-blue-800 border-blue-300 bg-blue-50' :
-                                            b.status === 'cancelled' ? 'text-red-800 border-red-300 bg-red-50' :
-                                            'text-amber-850 border-amber-300 bg-amber-50'
-                                          }`}
-                                        >
-                                          <option value="pending">قيد الانتظار لمراجعة الإدارة</option>
-                                          <option value="processing">تحت الإخراج والتعقيب</option>
-                                          <option value="completed">مكتملة ومستحقة الدفع</option>
-                                          <option value="cancelled">ملغية ومسحوبة</option>
-                                        </select>
-                                        {b.status === 'processing' && (
-                                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                                            daysInProcessing > 7 
-                                              ? 'bg-rose-100 text-rose-800 border border-rose-250 animate-pulse' 
-                                              : 'bg-slate-105 text-slate-600'
-                                          }`}>
-                                            {daysInProcessing} {daysInProcessing === 1 ? 'يوم' : daysInProcessing === 2 ? 'يومان' : 'أيام'} قيد المعالجة
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  })()}
-                                </td>
-                                <td className="p-4 text-left space-x-reverse space-x-1.5">
-                                  {(() => {
-                                    const daysInProcessing = Math.floor((new Date().getTime() - new Date(b.date).getTime()) / (1000 * 60 * 60 * 24));
-                                    const isProcessingOver7Days = b.status === 'processing' && daysInProcessing > 7;
-                                    return (
-                                      <>
-                                        {isProcessingOver7Days && (
-                                          <button
-                                            type="button"
-                                            onClick={() => handleSendProcessingReminder(b)}
-                                            className="bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 px-2.5 py-1.5 rounded font-black text-[11px] transition-all inline-flex items-center gap-1 cursor-pointer mr-1 ml-1 shadow-sm"
-                                            title="إرسال تذكير ومتابعة للعميل فوراً عبر واتساب لتجاوز الطلب 7 أيام"
-                                          >
-                                            <Send className="w-3 h-3 text-slate-950" />
-                                            <span>إرسال تذكير (WhatsApp)</span>
-                                          </button>
-                                        )}
-                                        <button
-                                          type="button"
-                                          onClick={() => handlePreFillTransactionFromBooking(b)}
-                                          className="bg-slate-950 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded font-black text-[11px] transition-colors"
-                                          title="ترحيل بيانات الطلب لإنشاء قيد مالي"
-                                        >
-                                          ترحيل لدفتر الفواتير المالية
-                                        </button>
-                                      </>
-                                    );
-                                  })()}
+                              {/* Admin Comments edits section */}
+                              <div className="p-2.5 bg-slate-50 border border-slate-205 rounded-xl space-y-1.5">
+                                <span className="text-[10px] font-black text-slate-700 block">📝 توجيهات وملاحظات الإدارة:</span>
+                                <textarea
+                                  key={`${b.id}-mb-${b.adminComments || ''}`}
+                                  defaultValue={b.adminComments || ''}
+                                  onBlur={(e) => handleUpdateAdminComments(b.id, e.target.value)}
+                                  placeholder="أضف ملاحظات الموظفين ومسار المعاملة الخاصة بالعميل..."
+                                  rows={2}
+                                  className="w-full text-xs text-slate-900 bg-white border border-slate-200 rounded-md p-2 focus:outline-none focus:border-slate-800 focus:ring-1 focus:ring-slate-800 transition text-right"
+                                />
+                              </div>
+
+                              {/* Process trigger buttons row */}
+                              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                                {isProcessingOver7Days && (
                                   <button
-                                    onClick={() => {
-                                      if (window.confirm('هل تريد حذف سجل الطلب هذا نهائياً من أرشيف المراجعة؟')) {
-                                        const filtered = bookings.filter(item => item.id !== b.id);
-                                        setBookings(filtered);
-                                        // Delete from Firestore
-                                        deleteDoc(doc(db, 'bookings', b.id))
-                                          .catch(err => handleFirestoreError(err, OperationType.DELETE, `bookings/${b.id}`));
-                                      }
-                                    }}
-                                    className="p-1 px-1.5 text-red-600 hover:text-white hover:bg-red-600 border border-red-200 rounded transition-colors"
-                                    title="حذف من الأرشيف"
+                                    type="button"
+                                    onClick={() => handleSendProcessingReminder(b)}
+                                    className="bg-amber-500 hover:bg-amber-600 text-slate-950 py-2.5 px-1 rounded-lg font-black text-[10.5px] transition-all flex items-center justify-center gap-1"
                                   >
-                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <Send className="w-3 h-3 text-slate-950" />
+                                    <span>تذكير WhatsApp 💬</span>
                                   </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handlePreFillTransactionFromBooking(b)}
+                                  className={`bg-slate-950 hover:bg-slate-800 text-white py-2.5 px-1 rounded-lg font-black text-[10.5px] transition-colors text-center ${isProcessingOver7Days ? 'col-span-1' : 'col-span-2'}`}
+                                >
+                                  ترحيل للفواتير المالية 💵
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
@@ -7720,6 +8008,52 @@ export default function App() {
                         />
                         <span className="text-[9px] text-slate-400 block leading-normal">يتحول العميل بموجبها لبوابة تصديق PayPal الآمنة لتجنب تحويل العملات الإجرائي.</span>
                       </div>
+
+                      <div className="space-y-4 border-t border-slate-800 pt-4 mt-4">
+                        <span className="block text-slate-300 font-bold text-xs mb-1">التحويل البنكي الرسمي التلقائي المعتمد (Bank Transfer Credentials)</span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-right">
+                          <div className="space-y-0.5">
+                            <label className="text-[10px] text-slate-400 font-bold block">اسم البنك:</label>
+                            <input
+                              type="text"
+                              value={paymentGatewayBankName}
+                              onChange={(e) => setPaymentGatewayBankName(e.target.value)}
+                              placeholder="البنك الأهلي السعودي (SNB)"
+                              className="w-full p-2 border border-slate-700 rounded focus:outline-none focus:border-amber-500 bg-slate-950 text-slate-100 text-xs"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <label className="text-[10px] text-slate-400 font-bold block">رقم الآيبان (IBAN):</label>
+                            <input
+                              type="text"
+                              value={paymentGatewayBankIban}
+                              onChange={(e) => setPaymentGatewayBankIban(e.target.value)}
+                              placeholder="SA 80 1000 ..."
+                              className="w-full p-2 border border-slate-700 rounded focus:outline-none focus:border-amber-500 bg-slate-950 text-slate-100 font-mono text-[10px] text-left"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <label className="text-[10px] text-slate-400 font-bold block">رمز سويفت (Swift Code):</label>
+                            <input
+                              type="text"
+                              value={paymentGatewayBankSwift}
+                              onChange={(e) => setPaymentGatewayBankSwift(e.target.value)}
+                              placeholder="NCBKSARIXXX"
+                              className="w-full p-2 border border-slate-700 rounded focus:outline-none focus:border-amber-500 bg-slate-950 text-slate-100 font-mono text-[10px] text-left"
+                            />
+                          </div>
+                          <div className="space-y-0.5">
+                            <label className="text-[10px] text-slate-400 font-bold block">اسم صاحب الحساب:</label>
+                            <input
+                              type="text"
+                              value={paymentGatewayBankHolder}
+                              onChange={(e) => setPaymentGatewayBankHolder(e.target.value)}
+                              placeholder="مكتب سما المملكة لتخليص المعاملات"
+                              className="w-full p-2 border border-slate-700 rounded focus:outline-none focus:border-amber-500 bg-slate-950 text-slate-100 text-[11px]"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Column 2: Toggles for local checkouts */}
@@ -7727,7 +8061,7 @@ export default function App() {
                       <p className="block text-slate-300 font-bold text-sm mb-1 text-right">تفعيل وتنشيط الشبكات المحلية بالبلدان المقيمة:</p>
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-right">
-                        {/* Mada toggle */}
+                        {/* mada toggle */}
                         <div className="bg-slate-950/40 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
                           <span className="text-[11px] text-slate-350 pr-2">شاشات مدى (mada) • للعملاء بالسعودية</span>
                           <input
@@ -7783,13 +8117,38 @@ export default function App() {
                   <div className="flex items-center gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => {
+                      onClick={async () => {
+                        // 1. Save locally for failsafe
                         localStorage.setItem('sm_stripe_key', paymentGatewayStripeKey);
                         localStorage.setItem('sm_paypal_email', paymentGatewayPaypalEmail);
                         localStorage.setItem('sm_mada_active', String(paymentGatewayMadaActive));
                         localStorage.setItem('sm_fawry_active', String(paymentGatewayFawryActive));
                         localStorage.setItem('sm_show_usd', String(showUSDPrice));
-                        alert('تم تحديث وحفظ إعدادات ربط بوابات الدفع وتسعير الدولار بنجاح!');
+                        localStorage.setItem('sm_bank_name', paymentGatewayBankName);
+                        localStorage.setItem('sm_bank_iban', paymentGatewayBankIban);
+                        localStorage.setItem('sm_bank_swift', paymentGatewayBankSwift);
+                        localStorage.setItem('sm_bank_holder', paymentGatewayBankHolder);
+
+                        // 2. Persistent save to global Firebase settings collection
+                        try {
+                          await setDoc(doc(db, 'settings', 'payments'), {
+                            stripeKey: paymentGatewayStripeKey,
+                            paypalEmail: paymentGatewayPaypalEmail,
+                            madaActive: paymentGatewayMadaActive,
+                            fawryActive: paymentGatewayFawryActive,
+                            showUSD: showUSDPrice,
+                            bankName: paymentGatewayBankName,
+                            bankIban: paymentGatewayBankIban,
+                            bankSwift: paymentGatewayBankSwift,
+                            bankHolder: paymentGatewayBankHolder,
+                            updatedBy: auth.currentUser?.email || 'admin_dashboard',
+                            updatedAt: new Date().toISOString()
+                          }, { merge: true });
+                          alert('✅ تم ربط وحفظ الإعدادات بنجاح في قاعدة البيانات السحابية ومزامنتها فورياً لجميع العملاء!');
+                        } catch (err: any) {
+                          console.error("Error saving payment credentials to cloud db:", err);
+                          alert('تم الحفظ محلياً فقط. فشل تحديث السحابة: ' + err.message);
+                        }
                       }}
                       className="bg-amber-600 hover:bg-amber-500 text-slate-950 font-black px-6 py-2.5 rounded-lg text-xs shadow-md transition duration-150 flex items-center gap-2 active:scale-98 cursor-pointer"
                     >
@@ -9985,7 +10344,8 @@ export default function App() {
                         <p className="text-[11px] text-slate-500">مراجعة تفاصيل البطاقات الوظيفية التفاعلية المنشورة وسحبها.</p>
                       </div>
 
-                      <div className="overflow-x-auto rounded-lg border border-slate-150">
+                      {/* Desktop View Table */}
+                      <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-150">
                         <table className="w-full min-w-[650px] border-collapse text-right text-xs">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
@@ -10041,6 +10401,46 @@ export default function App() {
                           </tbody>
                         </table>
                       </div>
+
+                      {/* Active Jobs Mobile view */}
+                      <div className="block md:hidden space-y-3">
+                        {jobVacancies.length === 0 ? (
+                          <div className="p-6 text-center text-slate-400 italic bg-slate-50 border border-slate-150 rounded-lg">
+                            لا توجد أي بطاقات شواغر منشورة حالياً. يرجى إعداد البطاقة الأولى أعلاه.
+                          </div>
+                        ) : (
+                          jobVacancies.map((vacancy) => {
+                            const matchedApps = jobApplications.filter(app => app.jobId === vacancy.id);
+                            return (
+                              <div key={vacancy.id} className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-right space-y-2">
+                                <div className="flex justify-between items-start">
+                                  <strong className="text-slate-900 font-bold block text-sm">{vacancy.title}</strong>
+                                  <span className="text-[10px] text-amber-700 font-mono">📅 {new Date(vacancy.date).toLocaleDateString('ar-SA')}</span>
+                                </div>
+                                <div className="text-[11px] text-slate-600">
+                                  <span>📍 {vacancy.location}</span> • <span className="font-semibold">{vacancy.department}</span>
+                                </div>
+                                <div className="text-xs font-semibold text-slate-800 flex justify-between">
+                                  <span>الراتب: {vacancy.salary}</span>
+                                  <span>النوع: {vacancy.type}</span>
+                                </div>
+                                <div className="bg-amber-500/10 border border-amber-500/20 text-slate-900 p-2 rounded-lg text-xs font-bold font-sans">
+                                  عدد المتقدمين: {matchedApps.length} طلبات تقدم
+                                </div>
+                                <div className="pt-1 select-none">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteJob(vacancy.id)}
+                                    className="w-full py-2 bg-red-50 hover:bg-red-600 text-red-600 hover:text-white rounded-lg border border-red-150 hover:border-red-600 text-xs font-bold transition duration-155"
+                                  >
+                                    إزالة الإعلان الوظيفي 🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
 
                     {/* Applications Received Table */}
@@ -10068,7 +10468,8 @@ export default function App() {
                         )}
                       </div>
 
-                      <div className="overflow-x-auto rounded-lg border border-slate-150">
+                      {/* Desktop View Table */}
+                      <div className="hidden md:block overflow-x-auto rounded-lg border border-slate-150">
                         <table className="w-full min-w-[800px] border-collapse text-right text-xs">
                           <thead>
                             <tr className="bg-slate-50 border-b border-slate-200 text-slate-700 font-bold">
@@ -10168,7 +10569,7 @@ export default function App() {
                                       <button
                                         type="button"
                                         onClick={() => handleOpenNotifyModal(app)}
-                                        className="p-1.5 px-1 bg-amber-50 hover:bg-amber-600 hover:text-slate-950 text-amber-800 border border-amber-100 hover:border-amber-500 rounded text-[10px] font-bold w-full transition flex items-center justify-center gap-1"
+                                        className="p-1.5 px-1 bg-amber-50 hover:bg-amber-600 hover:text-slate-955 text-amber-805 border border-amber-100 hover:border-amber-500 rounded text-[10px] font-bold w-full transition flex items-center justify-center gap-1"
                                       >
                                         <Send className="w-3 h-3" />
                                         <span>إرسال إشعار رسمي</span>
@@ -10177,7 +10578,7 @@ export default function App() {
                                       <button
                                         type="button"
                                         onClick={() => handleDeleteJobApplication(app.id)}
-                                        className="p-1 px-1 w-full bg-red-50 hover:bg-red-650 hover:text-white text-red-750 hover:border-red-650 rounded border border-red-100 text-[9px] font-bold transition"
+                                        className="p-1 px-1 w-full bg-red-50 hover:bg-red-655 hover:text-white text-red-750 hover:border-red-650 rounded border border-red-100 text-[9px] font-bold transition"
                                       >
                                         شطب وتصفية
                                       </button>
@@ -10189,6 +10590,103 @@ export default function App() {
                           </tbody>
                         </table>
                       </div>
+
+                      {/* Mobile Card List View */}
+                      <div className="block md:hidden space-y-4">
+                        {jobApplications.length === 0 ? (
+                          <div className="p-6 text-center text-slate-400 italic bg-slate-50 border border-slate-150 rounded-lg">
+                            لا توجد أي طلبات توظيف مقدمة متاح فرزها حالياً.
+                          </div>
+                        ) : (
+                          jobApplications.map((app) => {
+                            const currentStatus = app.status || 'قيد المراجعة';
+                            return (
+                              <div key={app.id} className="bg-slate-50 p-4 rounded-xl border border-slate-205 shadow-3xs text-right space-y-2.5 font-sans">
+                                <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                                  <div>
+                                    <strong className="text-slate-900 block text-sm font-extrabold">{app.applicantName}</strong>
+                                    <span className="text-slate-500 text-[11px] font-mono block mt-0.5 leading-none">{app.applicantPhone}</span>
+                                  </div>
+                                  <span className="text-[9px] text-slate-400 bg-slate-150 px-1.5 py-0.5 rounded font-mono">#{app.id.substring(4, 9)}</span>
+                                </div>
+
+                                <div className="space-y-1 text-xs">
+                                  <div>
+                                    <span className="text-slate-500">الوظيفة المستهدفة:</span>
+                                    <strong className="text-slate-800 mr-1 block">{app.jobTitle}</strong>
+                                  </div>
+                                  <div>
+                                    <span className="text-slate-500">التعليم والشهادة:</span>
+                                    <span className="text-slate-800 mr-1 font-semibold">{app.qualification}</span>
+                                  </div>
+                                  <div className="text-amber-805 font-bold text-[11px]">
+                                    ⚡ خبرة {app.experienceYears} {app.experienceYears >= 3 ? 'سنوات' : 'سنة/أقل'}
+                                  </div>
+                                  {app.notes && (
+                                    <div className="mt-1 bg-white p-2 rounded text-[11px] text-slate-600 border border-slate-200">
+                                      <strong>خطاب المرفق:</strong> {app.notes}
+                                    </div>
+                                  )}
+                                </div>
+
+                                <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+                                  <span>📅 {new Date(app.date).toLocaleDateString('ar-SA')} {new Date(app.date).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+
+                                <div className="space-y-2 border-t border-slate-150 pt-2.5">
+                                  <div>
+                                    <label className="block text-[10px] text-slate-500 font-bold mb-1">المرحلة والقرار الإداري الحالي:</label>
+                                    <select
+                                      value={currentStatus}
+                                      onChange={(e) => handleUpdateJobApplicationStatus(app.id, e.target.value as any)}
+                                      className="w-full border border-slate-300 text-xs p-2 rounded-lg bg-white text-slate-800 focus:outline-none"
+                                    >
+                                      <option value="قيد المراجعة">⏳ قيد المراجعة</option>
+                                      <option value="تمت المقابلة">🤝 تمت المقابلة</option>
+                                      <option value="تم القبول">✅ تم القبول</option>
+                                      <option value="مرفوض">❌ مرفوض</option>
+                                    </select>
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <a
+                                      href={`tel:${app.applicantPhone}`}
+                                      className="py-2.5 bg-slate-205 hover:bg-slate-300 text-slate-800 text-center rounded-lg text-xs font-bold border border-slate-300 flex items-center justify-center gap-1"
+                                    >
+                                      اتصال مباشر 📞
+                                    </a>
+                                    <a
+                                      href={`https://wa.me/${app.applicantPhone.replace(/^0/, '966').replace(/\+/g, '')}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="py-2.5 bg-emerald-100/90 hover:bg-emerald-600 hover:text-white text-emerald-800 text-center rounded-lg text-xs font-bold border border-emerald-200 flex items-center justify-center gap-1"
+                                    >
+                                      واتساب 💬
+                                    </a>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenNotifyModal(app)}
+                                    className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-955 rounded-lg text-xs font-black shadow-3xs flex items-center justify-center gap-1 cursor-pointer border border-amber-600/30"
+                                  >
+                                    <Send className="w-3.5 h-3.5 text-slate-955" />
+                                    <span>إرسال إشعار رسمي 📝</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteJobApplication(app.id)}
+                                    className="w-full py-2 bg-red-50 hover:bg-red-600 hover:text-white text-red-600 rounded-lg border border-red-100 text-[10.5px] font-bold"
+                                  >
+                                    شطب وتصفية الملف 🗑️
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
                     </div>
 
                   </div>
@@ -10198,7 +10696,7 @@ export default function App() {
             
           </div>
         )}
-      </main>
+      </div>
 
       {/* FOOTER GENERAL */}
       <footer className="bg-slate-950 text-slate-500 border-t border-slate-800 py-10 mt-16 font-sans">
@@ -10365,13 +10863,22 @@ export default function App() {
           booking={paymentBookingTarget}
           totalAmountSAR={(() => {
             const currentSrv = services.find(s => s.id === paymentBookingTarget.serviceId || s.name.trim() === paymentBookingTarget.serviceName.trim());
-            return currentSrv ? (currentSrv.govFee + currentSrv.officeFee * 1.15) : 345.00;
+            const fullAmt = currentSrv ? (currentSrv.govFee + currentSrv.officeFee * 1.15) : 345.00;
+            return paymentBookingTarget.paymentOption === 'half' ? (fullAmt / 2) : fullAmt;
           })()}
           allowedMethods={(() => {
             const currentSrv = services.find(s => s.id === paymentBookingTarget.serviceId || s.name.trim() === paymentBookingTarget.serviceName.trim());
             return currentSrv?.paymentMethods || ['mada', 'credit_card', 'applepay', 'bank_transfer'];
           })()}
           onPaymentSuccess={handleGlobalPaymentSuccess}
+          stripePublishableKey={paymentGatewayStripeKey}
+          paypalEmail={paymentGatewayPaypalEmail}
+          bankName={paymentGatewayBankName}
+          bankIban={paymentGatewayBankIban}
+          bankSwift={paymentGatewayBankSwift}
+          bankHolder={paymentGatewayBankHolder}
+          madaActive={paymentGatewayMadaActive}
+          fawryActive={paymentGatewayFawryActive}
         />
       )}
 
@@ -11004,8 +11511,6 @@ export default function App() {
           </div>
         </div>
       )}
-
-      </div> {/* Close scrollable main content container */}
 
       {/* 🟢 Floating Action Button (Dynamic Smart Dropdown Menu) */}
       <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex flex-col items-end">

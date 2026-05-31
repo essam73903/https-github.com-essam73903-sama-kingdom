@@ -55,11 +55,15 @@ service cloud.firestore {
       allow create: if isValidId(bookingId) && isValidBooking(incoming());
       allow update: if isValidId(bookingId) && (
         isAdmin() || 
+        // 1. Allow customer to submit rating & comment to completed booking
         (incoming().status == existing().status && incoming().clientName == existing().clientName && incoming().phoneNumber == existing().phoneNumber && (
-          // Allow customer to submit rating & comment to completed booking
           existing().status == 'completed' && 
           incoming().diff(existing()).affectedKeys().hasOnly(['rating', 'ratingComment']) &&
           incoming().rating is number && incoming().rating >= 1 && incoming().rating <= 5
+        )) ||
+        // 2. Allow customer to make online payment (updating isPaid status and payment reference)
+        (incoming().status == existing().status && incoming().clientName == existing().clientName && incoming().phoneNumber == existing().phoneNumber && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['isPaid', 'paymentMethod', 'paymentRef', 'paymentCountry', 'paidAmount'])
         ))
       );
       allow delete: if isAdmin();
@@ -79,7 +83,28 @@ service cloud.firestore {
     
     // Transactions Rules
     match /transactions/{transactionId} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin();
+      allow create: if isValidId(transactionId) && isValidTransaction(incoming());
+      allow update, delete: if isAdmin();
+
+      function isValidTransaction(data) {
+        return data.keys().hasAll(['id', 'clientName', 'serviceName', 'govFee', 'officeFee', 'tax', 'total', 'invoiceNumber', 'date'])
+          && data.keys().size() <= 12
+          && data.id is string
+          && data.clientName is string
+          && data.serviceName is string
+          && data.govFee is number
+          && data.officeFee is number
+          && data.tax is number
+          && data.total is number
+          && data.invoiceNumber is string;
+      }
+    }
+
+    // Global Settings (Payment Credentials & Bank Info)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
     
     // Job Vacancies Rules
