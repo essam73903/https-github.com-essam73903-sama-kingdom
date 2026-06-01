@@ -147,5 +147,10 @@ service cloud.firestore {
           && data.date is string && data.date.size() <= 50;
       }
     }
+
+    // Cold Storage Archives Rules
+    match /cold_storage_archives/{archiveId} {
+      allow read, write: if isAdmin();
+    }
   }
 }

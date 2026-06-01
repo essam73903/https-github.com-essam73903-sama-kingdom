@@ -234,3 +234,13 @@ export interface JobApplication {
   status?: 'قيد المراجعة' | 'تمت المقابلة' | 'تم القبول' | 'مرفوض';
 }
 
+export interface ColdStorageArchive {
+  id: string;
+  archiveDate: string; // ISO format
+  transferredCount: number;
+  estimatedBytesSaved: number;
+  compressedData: string; // JSON string of backed up objects
+  archiveType: 'transactions' | 'bookings' | 'all';
+  invoiceNumbers?: string[]; // list of archived identifiers
+}
+

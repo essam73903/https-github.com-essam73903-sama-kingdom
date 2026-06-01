@@ -96,6 +96,21 @@
         "status": { "type": "string" }
       },
       "required": ["id", "jobId", "jobTitle", "applicantName", "applicantPhone", "applicantEmail", "qualification", "experienceYears", "date"]
+    },
+    "ColdStorageArchive": {
+      "title": "ColdStorageArchive",
+      "description": "Represents an archived bulk transaction pack stored in Cold Storage to optimize warm Firestore billing and quotas.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "archiveDate": { "type": "string", "format": "date-time" },
+        "transferredCount": { "type": "number" },
+        "estimatedBytesSaved": { "type": "number" },
+        "compressedData": { "type": "string" },
+        "archiveType": { "type": "string" },
+        "invoiceNumbers": { "type": "array" }
+      },
+      "required": ["id", "archiveDate", "transferredCount", "estimatedBytesSaved", "compressedData", "archiveType"]
     }
   },
   "firestore": {
@@ -118,6 +133,10 @@
     "/job_applications/{applicationId}": {
       "schema": "JobApplication",
       "description": "Job application forms submitted by vacancy applicants"
+    },
+    "/cold_storage_archives/{archiveId}": {
+      "schema": "ColdStorageArchive",
+      "description": "Cold Storage backups containing highly compressed archived documents and transactions"
     }
   }
 }

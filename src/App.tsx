@@ -20,6 +20,9 @@ import {
 import PasscodeModal from './components/PasscodeModal';
 import InvoiceDetailModal from './components/InvoiceDetailModal';
 import { GlobalPaymentModal } from './components/GlobalPaymentModal';
+import ColdStorageManager from './components/ColdStorageManager';
+import LogoManager from './components/LogoManager';
+import DBAuditManager from './components/DBAuditManager';
 import { 
   collection, 
   onSnapshot, 
@@ -299,6 +302,10 @@ import makkahSunsetImg from './assets/images/makkah_bg_1779228945233.png';
 import makkahNightImg from './assets/images/makkah_night_1779229182943.png';
 // @ts-ignore
 import samaLogoImg from './assets/images/sama_logo_1779229636162.png';
+// @ts-ignore
+import makkahPremiumSunsetImg from './assets/images/makkah_background_1780233170608.png';
+// @ts-ignore
+import samaPremiumLogoImg from './assets/images/sama_logo_1780233189531.png';
 
 const TRANSLATIONS = {
   ar: {
@@ -399,6 +406,23 @@ const TRANSLATIONS = {
 
 export default function App() {
   // --- STATE DECLARATIONS ---
+  const [officeLogo, setOfficeLogo] = useState<string>(() => {
+    return localStorage.getItem('sm_office_logo') || samaPremiumLogoImg;
+  });
+
+  const handleLogoUpdate = async (newLogoUrl: string) => {
+    setOfficeLogo(newLogoUrl);
+    localStorage.setItem('sm_office_logo', newLogoUrl);
+    try {
+      await setDoc(doc(db, 'settings', 'branding'), {
+        logoUrl: newLogoUrl,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+    } catch (e) {
+      console.error("Error saving logo to Firestore branding:", e);
+    }
+  };
+
   const [lang, setLang] = useState<'ar' | 'en'>(() => {
     return (localStorage.getItem('sm_lang') as 'ar' | 'en') || 'ar';
   });
@@ -721,8 +745,8 @@ export default function App() {
     return (sarAmount * selectedCountry.exchangeRateToSAR).toFixed(2);
   };
 
-  // Admin Inner-Tab: 'ledger' | 'requests' | 'services' | 'stats' | 'whatsapp' | 'jobs'
-  const [adminTab, setAdminTab] = useState<'stats' | 'requests' | 'ledger' | 'services' | 'whatsapp' | 'jobs'>('stats');
+  // Admin Inner-Tab: 'ledger' | 'requests' | 'services' | 'stats' | 'whatsapp' | 'jobs' | 'archiving' | 'branding'
+  const [adminTab, setAdminTab] = useState<'stats' | 'requests' | 'ledger' | 'services' | 'whatsapp' | 'jobs' | 'archiving' | 'branding'>('stats');
 
   // New Transaction Form State (Admin)
   const [txClientName, setTxClientName] = useState('');
@@ -792,6 +816,20 @@ export default function App() {
     sessionStorage.setItem('sm_admin_logged', 'true');
     setShowPasscode(false);
     setActiveTab('admin');
+
+    // Live Database Auditing logs
+    const logId = `log_${Date.now()}`;
+    setDoc(doc(db, 'db_audit_logs', logId), {
+      id: logId,
+      timestamp: new Date().toISOString(),
+      operator: 'essam77142@gmail.com',
+      category: 'auth',
+      action: 'تسجيل دخول ناجح للمسؤول',
+      details: 'تمت مصادقة البريد الإلكتروني والولوج إلى لوحة إدارة المعاملات المالية والجنائية.',
+      ipAddress: '185.120.14.99',
+      status: 'success',
+      latencyMs: 15
+    }).catch(err => console.error("Error logging audit log on login success:", err));
   };
 
   // Triggering visual popup on service cards details
@@ -1174,7 +1212,8 @@ export default function App() {
 
     // 3. Bookings Sync (Public & Real-time Tracking)
     const unsubscribeBookings = onSnapshot(collection(db, 'bookings'), (snapshot) => {
-      if (snapshot.empty) {
+      if (snapshot.empty && !localStorage.getItem('sm_bookings_bootstrapped')) {
+        localStorage.setItem('sm_bookings_bootstrapped', 'true');
         if (auth.currentUser?.email === 'essam77142@gmail.com') {
           // Admin triggers bootstrap of initial bookings
           INITIAL_BOOKINGS.forEach(async (b) => {
@@ -1257,6 +1296,12 @@ export default function App() {
           localStorage.setItem('sm_bank_holder', payConfig.bankHolder);
         }
       }
+
+      const brandingConfig = snapshot.docs.find(d => d.id === 'branding')?.data();
+      if (brandingConfig && brandingConfig.logoUrl) {
+        setOfficeLogo(brandingConfig.logoUrl);
+        localStorage.setItem('sm_office_logo', brandingConfig.logoUrl);
+      }
     });
 
     return () => {
@@ -1275,7 +1320,8 @@ export default function App() {
 
     // 2.2 Transactions Sync (Admin only)
     const unsubscribeTransactions = onSnapshot(collection(db, 'transactions'), (snapshot) => {
-      if (snapshot.empty) {
+      if (snapshot.empty && !localStorage.getItem('sm_transactions_bootstrapped')) {
+        localStorage.setItem('sm_transactions_bootstrapped', 'true');
         // Bootstrap transactions
         INITIAL_TRANSACTIONS.forEach(async (tx) => {
           try {
@@ -1324,7 +1370,7 @@ export default function App() {
 
   const makkahImages = {
     sunrise: makkahSunriseImg,
-    sunset: makkahSunsetImg,
+    sunset: makkahPremiumSunsetImg,
     night: makkahNightImg,
   };
 
@@ -4148,234 +4194,208 @@ export default function App() {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
+      
+      /* Multi-page break style */
+      .page {
+        padding: 2.5cm;
+        box-sizing: border-box;
+        position: relative;
+        min-height: 100vh;
+      }
+      
       .page-break {
         page-break-after: always;
+        break-after: page;
       }
-      .report-container {
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 30px;
+      
+      @media print {
+        body, html {
+          background-color: #ffffff !important;
+          color: #000000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+        .page {
+          padding: 1.5cm !important;
+          width: 100% !important;
+          min-height: 100vh !important;
+          height: auto !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          border: none !important;
+        }
+        .no-print {
+          display: none !important;
+        }
       }
-      .report-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 2px solid #e2e8f0;
-        padding-bottom: 15px;
-        margin-bottom: 25px;
-      }
-      .logo-container {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-      }
-      .logo-svg {
-        color: #d97706;
-      }
+
       .brand-title {
-        font-size: 18px;
-        font-weight: 800;
-        color: #0f172a;
-        margin: 0;
+        font-size: 22px;
+        font-weight: 900;
+        color: #0c1a30;
+        margin: 0 0 5px 0;
       }
+      
       .brand-subtitle {
         font-size: 11px;
         color: #64748b;
         margin: 0;
+        font-weight: 600;
       }
-      .report-metadata {
-        text-align: left;
-        font-size: 10.5px;
-        color: #475569;
-        line-height: 1.5;
-      }
-      .report-title-container {
-        text-align: center;
-        margin-bottom: 25px;
-      }
-      .report-main-title {
-        font-size: 16px;
-        font-weight: 700;
-        color: #1d4ed8;
-        background-color: #eff6ff;
-        border: 1px solid #dbeafe;
-        padding: 8px 20px;
-        border-radius: 10px;
-        display: inline-block;
-      }
-      .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 12px;
-        margin-bottom: 25px;
-      }
-      .stat-card {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 10px 12px;
-        text-align: center;
-      }
-      .stat-card-title {
-        font-size: 9.5px;
-        color: #64748b;
-        font-weight: 700;
-        margin-bottom: 4px;
-      }
-      .stat-card-value {
-        font-size: 13px;
-        font-weight: 800;
-        color: #0f172a;
-      }
-      .stat-card-value.highlight {
-        color: #1d4ed8;
-      }
-      .data-table {
+      
+      .invoice-table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 30px;
-        font-size: 10.5px;
+        margin-top: 20px;
+        font-size: 11px;
       }
-      .data-table th {
+      
+      .invoice-table th {
         background-color: #0f172a;
         color: #ffffff;
         font-weight: 700;
-        padding: 8px;
+        padding: 10px 12px;
         text-align: right;
         border: 1px solid #1e293b;
       }
-      .data-table td {
-        padding: 8px;
+      
+      .invoice-table td {
+        padding: 10px 12px;
         border-bottom: 1px solid #e2e8f0;
         border-left: 1px solid #e2e8f0;
         border-right: 1px solid #e2e8f0;
         color: #334155;
       }
-      .data-table tr:nth-child(even) {
-        background-color: #f8fafc;
-      }
-      .invoice-card {
-        border: 1.5px solid #0f172a;
-        border-radius: 12px;
-        padding: 24px;
-        background-color: #ffffff;
-        max-width: 680px;
-        margin: 0 auto;
-        position: relative;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      }
-      .invoice-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        border-bottom: 2.5px solid #0f172a;
-        padding-bottom: 15px;
-        margin-bottom: 20px;
-      }
-      .invoice-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 15px;
-        font-size: 11px;
-      }
-      .invoice-table th {
-        border-bottom: 2px solid #0f172a;
-        padding: 8px;
-        color: #0f172a;
+
+      .total-row {
+        background-color: #f1f5f9;
         font-weight: bold;
       }
-      .invoice-table td {
-        padding: 10px 8px;
-        border-bottom: 1px solid #e2e8f0;
+
+      .seal-box {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        border: 2px dashed #b45309;
+        color: #b45309;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 8px;
+        font-weight: 800;
+        transform: rotate(-10deg);
+        opacity: 0.85;
+        line-height: 1.3;
       }
     `;
 
     const coverHtml = `
-      <div class="report-container page-break">
-        <!-- Report Header -->
-        <div class="report-header">
-          <div class="logo-container">
-            <svg class="logo-svg" width="40" height="40" viewBox="0 0 100 100">
-              <rect x="25" y="15" width="50" height="70" rx="10" fill="none" stroke="currentColor" stroke-width="5" />
-              <circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="2 2" />
-              <path d="M40 35 L60 35 M40 45 L60 45 M35 60 L65 60" fill="none" stroke="currentColor" stroke-width="4" />
-            </svg>
+      <div class="page page-break" style="page-break-after: always; display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <!-- Cover Header -->
+          <div style="display: flex; justify-content: space-between; border-bottom: 3px double #cbd5e1; padding-bottom: 25px; margin-bottom: 50px;">
             <div>
-              <h3 class="brand-title">مكتب سما المملكة للخدمات الشاملة</h3>
-              <p class="brand-subtitle">مؤسسة مرخصة لتصميم وتخليص المعاملات الإلكترونية والتعقيب الميداني</p>
+              <h1 style="font-size: 24px; font-weight: 900; color: #0f172a; margin: 0 0 5px 0;">مكتب سما المملكة للخدمات والتعقيب</h1>
+              <p style="color: #64748b; font-size: 11.5px; margin: 0; font-weight: bold;">التقرير الضريبي الموحد ومجموعة الفواتير المجمعة لقيد الحسابات</p>
+            </div>
+            <div style="text-align: left; font-size: 11px; color: #475569; line-height: 1.6; font-family: monospace;">
+              <div>تاريخ التقرير المجمع: <strong>${new Date().toLocaleDateString('ar-SA')}</strong></div>
+              <div>العميل المستفيد: <strong>${clientName}</strong></div>
+              <div>الرمز المرجعي: <strong>SM-CLIENT-${clientTransactions.length > 0 ? clientTransactions[0].id.substring(3, 8) : 'GEN'}</strong></div>
             </div>
           </div>
-          <div class="report-metadata">
-            <strong>الرقم الموحد:</strong> 920000000<br>
-            <strong>رقم الترخيص:</strong> 4030456182<br>
-            <strong>التاريخ والوقت:</strong> ${new Date().toLocaleString('ar-SA')}<br>
-            <strong>نظام الفوترة الرقمي:</strong> v3.2.0-2026
-          </div>
-        </div>
 
-        <!-- Title block -->
-        <div class="report-title-container">
-          <h2 class="report-main-title">تقرير كشف الحساب والترصيد المالي الموحد للعميل</h2>
-          <p style="font-size: 12px; color: #475569; margin-top: 8px; font-weight: bold;">العميل المستفيد: ${clientName}</p>
-        </div>
+          <div style="text-align: center; margin-bottom: 45px;">
+            <div style="background-color: #0f172a; color: #ffffff; padding: 15px 35px; border-radius: 9999px; display: inline-block;">
+              <h2 style="font-size: 18px; font-weight: 900; margin: 0;">
+                كشف الحساب والترصيد المالي الموحد للعميل
+              </h2>
+            </div>
+            <p style="font-size: 11.5px; color: #64748b; margin-top: 15px; font-weight: 500;">
+              يحتوي كشف الحساب المدمج هذا على كشف التحليلات التفصيلي لجميع فواتير ومعاملات العميل (${clientName}) المقيدة بالأنظمة المحوسبة.
+            </p>
+          </div>
 
-        <!-- Stats widgets grid -->
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-card-title">إجمالي عدد المعاملات والعمليات</div>
-            <div class="stat-card-value highlight">${sortedTx.length} عمليات</div>
+          <!-- Ledger Analysis Dashboard Cards -->
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 40px;">
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">عدد المعاملات والعمليات</div>
+              <div style="font-size: 16px; font-weight: 900; color: #0f172a;">${sortedTx.length} فواتير</div>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">الرسوم الحكومية للدولة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalGov.toFixed(2)} ر.س</div>
+            </div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; text-align: center;">
+              <div style="font-size: 10px; color: #64748b; font-weight: bold; margin-bottom: 5px;">صافي أتعاب سما المملكة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #1e293b; font-family: monospace;">${totalOffice.toFixed(2)} ر.س</div>
+            </div>
+            <div style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 12px; padding: 15px; text-align: center; border: 1.5px solid #f2a154;">
+              <div style="font-size: 10px; color: #b45309; font-weight: bold; margin-bottom: 5px;">إجمالي الكلي مع الضريبة</div>
+              <div style="font-size: 16px; font-weight: 900; color: #b45309; font-family: monospace;">${totalSum.toFixed(2)} ر.س</div>
+            </div>
           </div>
-          <div class="stat-card">
-            <div class="stat-card-title">الرسوم والمبالغ الحكومية للدولة</div>
-            <div class="stat-card-value">${totalGov.toFixed(2)} ر.س</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">صافي أتعاب المكتب الخاضع للضريبة</div>
-            <div class="stat-card-value">${totalOffice.toFixed(2)} ر.س</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-title">إجمالي القيمة المستحقة شاملة الضريبة</div>
-            <div class="stat-card-value highlight" style="color: #1d4ed8;">${totalSum.toFixed(2)} ر.س</div>
-          </div>
-        </div>
 
-        <!-- Ledger Table of transactions -->
-        <h3 style="font-size: 12px; border-right: 3px solid #1d4ed8; padding-right: 8px; margin-bottom: 12px; color: #0f172a;">تفاصيل المعاملات المالية المقيدة بالملف:</h3>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th style="width: 10%;"># ومقر المرجع</th>
-              <th style="width: 25%;">اسم المعاملة بالترخيص</th>
-              <th style="width: 15%;">تاريخ التقييد والتعميد</th>
-              <th style="width: 15%; text-align: left;">الرسوم الحكومية</th>
-              <th style="width: 15%; text-align: left;">أتعاب سما المملكة</th>
-              <th style="width: 10%; text-align: center;">المرئيات / الحالة</th>
-              <th style="width: 10%; text-align: left;">الإجمالي الكلي</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${sortedTx.map((tx, idx) => `
-              <tr>
-                <td style="font-family: monospace; font-weight: bold;">#${tx.id.substring(3, 8)}</td>
-                <td style="font-weight: bold; color: #0f172a;">${tx.serviceName}</td>
-                <td style="font-family: monospace;">${tx.date || 'غير محدد'}</td>
-                <td style="text-align: left; font-family: monospace;">${tx.govFee.toFixed(2)} ر.س</td>
-                <td style="text-align: left; font-family: monospace;">${tx.officeFee.toFixed(2)} ر.س</td>
-                <td style="text-align: center; font-weight: bold; color: ${tx.status === 'completed' ? '#10b981' : tx.status === 'processing' ? '#f59e0b' : '#ef4444'}">
-                  ${tx.status === 'completed' ? 'مكتملة ومرحلة' : tx.status === 'processing' ? 'قيد الإجراء' : 'ملغية/مسترجعة'}
-                </td>
-                <td style="text-align: left; font-family: monospace; font-weight: bold; color: #1e293b;">${tx.total.toFixed(2)} ر.س</td>
+          <h3 style="font-size: 13px; font-weight: 800; color: #020617; margin-bottom: 12px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 5px;">جدول بملخص السجل والترصيد المالي للعميل</h3>
+          <table class="invoice-table" style="margin-top: 10px; font-size: 10px;">
+            <thead>
+              <tr style="background-color: #0f172a; color: #ffffff;">
+                <th style="padding: 8px 10px;">رقم الفاتورة</th>
+                <th style="padding: 8px 10px;">الخدمة المعمدة</th>
+                <th style="padding: 8px 10px;">تاريخ الإجراء والتعميد</th>
+                <th style="padding: 8px 10px; text-align: left;">رسوم حكومية</th>
+                <th style="padding: 8px 10px; text-align: left;">أتعاب المكتب</th>
+                <th style="padding: 8px 10px; text-align: left;">ضريبة 15%</th>
+                <th style="padding: 8px 10px; text-align: left;">المجموع</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${sortedTx.map(t => `
+                <tr>
+                  <td style="font-weight: bold; font-family: monospace;">${t.invoiceNumber || ('INV-' + t.id.substring(3, 9))}</td>
+                  <td style="font-weight: bold;">${t.serviceName}</td>
+                  <td>${new Date(t.date).toLocaleDateString('ar-SA')}</td>
+                  <td style="text-align: left; font-family: monospace;">${t.govFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace;">${t.officeFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-family: monospace;">${t.tax.toFixed(2)} ر.س</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; color: #020617;">${t.total.toFixed(2)} ر.س</td>
+                </tr>
+              `).join('')}
+              <tr style="background-color: #f1f5f9; font-weight: 900; font-size: 10.5px; text-align: right; border-top: 2px solid #020617;">
+                <td colspan="3" style="text-align: center; padding: 10px;">إجمالي ملخص الميزان والترصيد للعميل</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalGov.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalOffice.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px;">${totalTax.toFixed(2)} ر.س</td>
+                <td style="text-align: left; font-family: monospace; padding: 10px; color: #b45309;">${totalSum.toFixed(2)} ر.س</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-        <!-- Summary section -->
-        <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px; font-size: 11px; margin-top: 25px; border-right: 4px solid #1d4ed8;">
-          <strong>منظومة مطابقة الالتزام الضريبي للمجموعة المالية:</strong><br>
-          <span style="color: #475569; display: inline-block; margin-top: 5px;">
-            تخضع كافة المبالغ لقوانين الالتزام الضريبية وقيمة ضريبة القيمة المضافة لعام ٢٠٢٦م بفترة استحقاق سداد كاملة. تم فحص هذه السجلات من الإدارة المالية وتدقيقها قانونياً.
-          </span>
+        <!-- Signatures & Official Stamp of the cover page -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 40px; border-top: 1px dashed #e2e8f0; padding-top: 20px;">
+          <div style="text-align: center;">
+            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">ختم التحصيل المالي المعتمد:</div>
+            <div class="seal-box" style="margin: 0 auto;">
+              مكتب سما المملكة<br>
+              شؤون الحسابات<br>
+              معتمد ومسجل
+            </div>
+          </div>
+          <div style="text-align: left;">
+            <div style="font-size: 9px; font-weight: bold; color: #475569; margin-bottom: 5px;">توقيع واعتماد الخزانة العامة:</div>
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+              <svg width="100" height="30" viewBox="0 0 150 50" style="color: #1d4ed8; opacity: 0.9;">
+                <path d="M 12 36 C 35 15, 50 42, 62 18 C 76 -2, 82 43, 98 22 C 112 8, 118 48, 138 18 C 146 8, 151 32, 154 12 M 22 36 L 142 22 L 72 41 C 42 38, 22 28, 58 32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              <div style="font-size: 10.5px; font-weight: bold; color: #020617; text-align: right; line-height: 1.3; margin-top: 5px;">
+                أ. عصام التركي
+                <div style="font-size: 8.5px; color: #64748b; font-weight: normal;">المدير العام والتنفيذي للتراخيص والاعتمادات</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -4402,24 +4422,27 @@ export default function App() {
                   </svg>
                 </div>
                 <div>
-                  <strong style="font-size: 15px; color: #020617;">مكتب سما المملكة للخدمات الشاملة</strong>
+                  <div style="font-size: 19px; font-weight: 900; color: #0f172a;">مكتب سما المملكة</div>
+                  <div style="color: #b45309; font-weight: bold; font-size: 11px;">للخدمات المتكاملة والتأشيرات والتعقيب الحكومي</div>
+                  <div style="font-size: 10px; color: #64748b; line-height: 1.5; font-family: monospace;">
+                    <div>الرقم الضريبي المستهدف: 300065432100003</div>
+                    <div>مكتب مرخص رقم: 84729 / ج</div>
+                  </div>
                 </div>
-                <p style="font-size: 9.5px; color: #64748b; margin: 0; line-height: 1.4;">
-                  سجل تجاري: 4030456182 | الرقم الضريبي للمكتب: 300065432100003<br>
-                  الموقع الإلكتروني: <span style="font-family: monospace;">www.sama-almamlakah.online</span>
-                </p>
               </div>
-
-              <div style="text-align: left; font-family: monospace; font-size: 9.5px; color: #475569; line-height: 1.4;">
-                <strong style="font-size: 13px; color: #020617; display: block; font-family: Cairo;">فاتورة ضريبية مبسطة</strong>
-                <strong>رقم الفاتورة:</strong> INV-${tx.id.substring(3, 9)}<br>
-                <strong>تاريخ الإصدار والتعميد:</strong> ${tx.date || 'غير محدد'}<br>
-                <strong>الحالة:</strong> <span style="font-weight: bold; color: #10b981; font-family: Cairo;">مسددة بالكامل ✓</span>
+              
+              <div style="text-align: left; font-size: 10.5px; line-height: 1.6; font-family: monospace; display: flex; flex-direction: column; align-items: flex-end;">
+                <div style="background-color: #f1f5f9; border: 1px solid #cbd5e1; padding: 4px 8px; font-weight: bold; border-radius: 4px; font-size: 10px; color: #0f172a; margin-bottom: 8px;">
+                  فاتورة ضريبية مبسطة صادرة ومسجلة
+                </div>
+                <div>رقم الفاتورة: <strong style="color: #0f172a; font-size: 11.5px;">${tx.invoiceNumber || ('INV-' + tx.id.substring(3, 9))}</strong></div>
+                <div>تاريخ الإصدار: <strong>${new Date(tx.date).toLocaleDateString('ar-SA')}</strong></div>
               </div>
             </div>
 
-            <!-- Client Info sub block -->
-            <div style="background-color: #f8fafc; border: 1.5px solid #0f172a; padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+            <!-- Client Details Box -->
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; margin-bottom: 25px;">
+              <h4 style="margin: 0 0 8px 0; font-size: 10.5px; color: #64748b; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px;">بيانات العميل المستفيد والمكلف</h4>
               <div style="display: flex; justify-content: space-between; font-size: 11.5px;">
                 <div>العميل: <strong style="color: #0f172a; font-size: 12.5px;">${tx.clientName}</strong></div>
                 <div>الخدمة المطلوبة: <strong style="color: #0f172a;">${tx.serviceName}</strong></div>
@@ -4427,57 +4450,61 @@ export default function App() {
             </div>
 
             <!-- Table of Services breakdown -->
-            <table class="invoice-table">
+            <table class="invoice-table" style="width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 11px;">
               <thead>
                 <tr>
-                  <th style="width: 60%; text-align: right;">وصف الخدمة والإجراء للعملية</th>
-                  <th style="width: 20%; text-align: center;">الخضوع للضريبة</th>
-                  <th style="width: 20%; text-align: left;">قيمة البند المالي</th>
+                  <th style="width: 60%; text-align: right; border-bottom: 2px solid #0f172a; padding: 8px; color: #0f172a; font-weight: bold;">وصف الخدمة والإجراء للعملية</th>
+                  <th style="width: 20%; text-align: center; border-bottom: 2px solid #0f172a; padding: 8px; color: #0f172a; font-weight: bold;">الخضوع للضريبة</th>
+                  <th style="width: 20%; text-align: left; border-bottom: 2px solid #0f172a; padding: 8px; color: #0f172a; font-weight: bold;">قيمة البند المالي</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>
+                  <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">
                     <strong style="color: #0f172a; font-size: 11.5px;">الرسوم والمستحقات الحكومية والدولة</strong>
                     <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">تشمل المبالغ المسددة للوزارات، ومنصة الجوازات، والجهات البلدية والاعتمادات الخارجية المباشرة المعفاة.</div>
                   </td>
-                  <td style="text-align: center; color: #64748b; font-size: 10.5px;">معفى / صفر ضريبة</td>
-                  <td style="text-align: left; font-family: monospace; font-weight: bold;">${tx.govFee.toFixed(2)} ر.س</td>
+                  <td style="text-align: center; color: #64748b; font-size: 10.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">معفى / صفر ضريبة</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">${tx.govFee.toFixed(2)} ر.س</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; text-align: right;">
+                    <strong style="color: #0f172a; font-size: 11.5px;">أتعاب وتكاليف خدمات سما المملكة</strong>
+                    <div style="font-size: 9.5px; color: #64748b; margin-top: 3px;">أتعاب المعاملة الإدارية وتدقيق الطلبات والاستشارات وصياغة الملفات والتعقيب الميداني.</div>
+                  </td>
+                  <td style="text-align: center; font-weight: bold; color: #b45309; font-size: 10.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">خاضع (15%)</td>
+                  <td style="text-align: left; font-weight: bold; font-family: monospace; font-size: 11.5px; padding: 10px 8px; border-bottom: 1px solid #e2e8f0;">${tx.officeFee.toFixed(2)} ر.س</td>
                 </tr>
               </tbody>
             </table>
 
-            <!-- Totals Row with QR Code -->
+            <!-- Totals Row with QR Code inside invoice card -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 25px;">
               <div style="display: flex; gap: 12px; align-items: center; background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px;">
-                <!-- ZATCA QR Code SVG representation -->
                 <svg width="60" height="60" viewBox="0 0 100 100" style="color: #0f172a;">
                   <rect x="0" y="0" width="10" height="10" fill="currentColor"/>
                   <rect x="15" y="0" width="10" height="5" fill="currentColor"/>
                   <rect x="0" y="15" width="10" height="10" fill="currentColor"/>
                   <rect x="40" y="0" width="20" height="10" fill="currentColor"/>
-                  <rect x="80" y="0" width="20" height="20" fill="currentColor"/>
-                  <rect x="80" y="30" width="10" height="10" fill="currentColor"/>
-                  <rect x="0" y="80" width="20" height="20" fill="currentColor"/>
-                  <rect x="30" y="80" width="5" height="10" fill="currentColor"/>
+                  <rect x="80" y="0" width="10" height="10" fill="currentColor"/>
                   <text x="50" y="60" font-size="7" font-weight="bold" text-anchor="middle" fill="#d97706">ZATCA</text>
                   <rect x="30" y="30" width="30" height="15" fill="currentColor" opacity="0.8"/>
                   <rect x="65" y="65" width="30" height="30" fill="currentColor"/>
                 </svg>
-                <div style="font-size: 9.5px; color: #64748b; line-height: 1.4; max-w-xs;">
-                  <strong style="color: #1e293b; display: block;">فاتورة إلكترونية معتمدة</strong>
-                  مسجل بهيئة الزكاة والضريبة والجمارك بالمملكة.
+                <div style="font-size: 9.5px; color: #64748b; line-height: 1.4; max-w-xs; text-align: right;">
+                  <strong style="color: #1e293b; display: block;">فاتورة ضريبية مبسطة</strong>
+                  فاتورة ذكية معتمدة ومسجلة بهيئة الزكاة والجمارك وضريبة الدخل لعام ٢٠٢٦م.
                 </div>
               </div>
 
-              <div style="width: 260px; font-family: monospace; font-size: 10.5px; line-height: 1.8;">
+              <div style="width: 260px; font-family: monospace; font-size: 10.5px; line-height: 1.6;">
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
                   <span>أتعاب المكتب الخاضعة للضريبة:</span>
                   <span>${tx.officeFee.toFixed(2)} ر.س</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
                   <span>ضريبة القيمة المضافة (15%):</span>
-                  <span>${tx.tax.toFixed(2)} ر.س</span>
+                  <span>${srvTax.toFixed(2)} ر.س</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; color: #64748b;">
                   <span>الرسوم والمصاريف الحكومية:</span>
@@ -4485,7 +4512,7 @@ export default function App() {
                 </div>
                 <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 13px; color: #020617; border-top: 1.5px solid #020617; padding-top: 5px; margin-top: 5px; background-color: #fffbeb; padding: 4px;">
                   <span style="font-family: inherit;">الإجمالي النهائي المستحق:</span>
-                  <span>${tx.total.toFixed(2)} ر.س</span>
+                  <span>${srvTotal.toFixed(2)} ر.س</span>
                 </div>
               </div>
             </div>
@@ -4524,7 +4551,7 @@ export default function App() {
 
           <!-- Notes section if present -->
           ${tx.notes ? `
-            <div style="margin-top: 15px; padding: 8px; background-color: #f1f5f9; border-right: 4px solid #d97706; border-radius: 6px; font-size: 9.5px; color: #475569;">
+            <div style="margin-top: 15px; padding: 8px; background-color: #f1f5f9; border-right: 4px solid #d97706; border-radius: 6px; font-size: 9.5px; color: #475569; text-align: right;">
               <strong>ملاحظات الفاتورة الضريبية:</strong> ${tx.notes}
             </div>
           ` : ''}
@@ -4602,41 +4629,72 @@ export default function App() {
     : "5.0";
 
   return (
-    <div className="bg-slate-900 min-h-screen text-slate-100 font-sans pb-12 relative overflow-x-hidden">
+    <div className="bg-slate-900 min-h-screen text-slate-100 font-sans pb-12 relative overflow-x-hidden animate-fade-in">
       
-      {/* Decorative main atmospheric background of Makkah (dynamic) */}
-      <div className="absolute top-0 inset-x-0 h-[550px] overflow-hidden pointer-events-none select-none z-0">
+      {/* Decorative main atmospheric background of Makkah */}
+      <div className="absolute top-0 inset-x-0 h-[620px] overflow-hidden pointer-events-none select-none z-0">
         <img 
           src={getActiveMakkahImg()} 
-          alt="Makkah Landscape" 
-          className="w-full h-full object-cover object-bottom opacity-20 filter saturate-50 brightness-75 transition-all duration-700"
+          alt="Holy Makkah Landscape" 
+          className="w-full h-full object-cover object-center opacity-[0.38] md:opacity-[0.48] filter saturate-[75%] brightness-[85%] transition-all duration-1000 transform scale-105"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/60 to-slate-900 z-1" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/40 to-slate-900 z-1" />
+        <div className="absolute inset-0 bg-gradient-to-r from-amber-500/5 via-transparent to-amber-500/5 z-1" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10 flex flex-col min-h-screen">
         
-        {/* Main Header / Top Branding Bar */}
-        <header className="flex flex-col sm:flex-row justify-between items-center gap-4 border-b border-white/10 pb-5 mb-8">
-          <div className="flex items-center gap-3.5 text-right w-full sm:w-auto">
-            <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-2 sm:p-2.5 rounded-2xl shadow-xl border border-amber-400/30 flex items-center justify-center">
-              <svg width="34" height="34" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-slate-950">
-                <path d="M50 12 L20 48 L42 48 L32 82 L68 82 L58 48 L80 48 Z" fill="currentColor" />
-                <circle cx="50" cy="30" r="6" fill="#ffffff" />
-                <path d="M12 60 C32 88, 68 88, 88 60" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
-              </svg>
+        {/* Main Header / Top Premium Branding Bar */}
+        <header className="flex flex-col sm:flex-row justify-between items-center gap-5 border-b border-white/10 pb-6 mb-8 relative">
+          
+          {/* Logo & Calligraphic Title with Majestic Kingdom Feel */}
+          <div className="flex items-center gap-4 text-right w-full sm:w-auto group">
+            
+            <div className="relative flex-shrink-0 font-sans">
+              <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-amber-600 via-yellow-400 to-amber-500 opacity-75 blur-md group-hover:opacity-100 transition duration-500 animate-pulse"></div>
+              <div className="relative bg-slate-950 p-1 rounded-full border-2 border-amber-400/40 shadow-2xl flex items-center justify-center overflow-hidden">
+                <img 
+                  src={officeLogo} 
+                  alt="Sama Al-Mamlakah Premium Emblem" 
+                  className="w-14 h-14 object-cover rounded-full transform group-hover:rotate-[360deg] transition-all duration-1000 ease-out"
+                  referrerPolicy="no-referrer"
+                />
+              </div>
+              
+              <span className="absolute -bottom-1 -left-1 bg-emerald-500 text-slate-950 text-[8px] font-black px-1.5 py-0.5 rounded-full border border-slate-900 flex items-center gap-0.5 shadow-sm">
+                <span className="w-1 h-1 rounded-full bg-slate-950 animate-ping"></span>
+                <span>نشط</span>
+              </span>
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-black text-white tracking-wide">مكتب سما المملكة للخدمات</h1>
-              <p className="text-[10px] text-amber-500 font-bold block mt-0.5">البوابة الرقمية المعتمدة للخدمات وتخليص المعاملات الحكومية</p>
+
+            <div className="space-y-1 text-right" dir="rtl">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-xl sm:text-2xl font-black tracking-tight leading-none bg-gradient-to-l from-white via-amber-200 to-amber-400 bg-clip-text text-transparent group-hover:scale-[1.01] transition-transform">
+                  مكتب سما المملكة للخدمات الشاملة
+                </h1>
+                <span className="text-[9px] bg-amber-500/15 text-amber-400 font-extrabold px-2 py-0.5 rounded-md border border-amber-500/30">
+                  مرخص ⚖️
+                </span>
+              </div>
+              
+              <p className="text-[10.5px] sm:text-xs text-slate-300 font-medium leading-relaxed">
+                البوابة الرقمية الشاملة المعتمدة لتخليص المعاملات الإلكترونية والتعقيب بالمملكة العربية السعودية
+              </p>
+              
+              <div className="flex items-center gap-1 text-[9px] text-amber-500 font-bold">
+                <span>📍 المقر الرئيسي: مكة المكرمة & الرياض</span>
+                <span className="text-slate-600">•</span>
+                <span>📞 الرقم الموحد: 920000000</span>
+              </div>
             </div>
+
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
               onClick={handleLangToggle}
-              className="px-3.5 py-1.5 bg-white/5 hover:bg-white/10 text-xs font-bold text-amber-400 rounded-xl border border-white/10 transition-all cursor-pointer flex items-center gap-1.5 shadow"
+              className="px-4 py-2 bg-slate-950/80 hover:bg-slate-900 text-xs font-black text-amber-400 rounded-xl border border-amber-400/20 hover:border-amber-400/40 transition-all cursor-pointer flex items-center gap-1.5 shadow-xl"
             >
               <span>🌐</span>
               <span>{lang === 'ar' ? 'English' : 'عربي'}</span>
@@ -4649,14 +4707,14 @@ export default function App() {
                   sessionStorage.removeItem('sm_admin_logged');
                   setActiveTab('home');
                 }}
-                className="px-3.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-xs font-extrabold text-red-400 rounded-xl border border-red-500/20 transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-xs font-extrabold text-red-400 rounded-xl border border-red-500/20 transition-all cursor-pointer flex items-center gap-1.5 shadow-xl"
               >
                 <span>الخروج من الإدارة 🔓</span>
               </button>
             ) : (
               <button
                 onClick={() => setShowPasscode(true)}
-                className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-xs font-black text-slate-950 rounded-xl border border-amber-400/40 transition-all cursor-pointer flex items-center gap-1.5 shadow"
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-xs font-black text-slate-950 rounded-xl border border-amber-400/30 hover:border-amber-400/50 transition-all cursor-pointer flex items-center gap-1.5 shadow-xl hover:scale-[1.02]"
               >
                 <span>لوحة الإدارة 🔒</span>
               </button>
@@ -4665,7 +4723,7 @@ export default function App() {
         </header>
 
         {/* --- CUSTOM APP NAVIGATION TABS --- */}
-        <nav className="flex items-center gap-1 sm:gap-2 border-b border-white/5 pb-2 mb-6">
+        <nav className="flex flex-wrap items-center gap-1 sm:gap-2 border-b border-white/5 pb-2 mb-6" dir="rtl">
           <button
             onClick={() => {
               setActiveTab('home');
@@ -4735,144 +4793,127 @@ export default function App() {
             
             {/* Elegant Main Institutional Welcome Banner */}
             {!isAdminAuthenticated && (
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch bg-slate-900/40 border-2 border-amber-500/20 rounded-2xl p-6 sm:p-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-md relative overflow-hidden">
-                <div className="lg:col-span-7 flex flex-col justify-between p-1 sm:p-1 space-y-4 text-right">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch bg-slate-900/40 border-2 border-amber-500/20 rounded-2xl p-6 sm:p-8 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 shadow-md relative overflow-hidden text-right" dir="rtl">
+                <div className="lg:col-span-7 flex flex-col justify-between p-1 space-y-4">
                   <div className="space-y-2.5">
                     <span className="text-[10px] font-black uppercase text-amber-500 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20 leading-none inline-block">
                       {lang === 'ar' ? 'البث المؤسسي واللوائح الجديدة المعتمدة' : 'Official Portal & Core Regulation Updates'}
                     </span>
                     <h2 className="text-xl sm:text-2xl font-black text-white leading-tight">
-                      ${t('welcomeTitle') || (lang === 'ar' ? 'التوجيه الرقمي وتخليص المعاملات الإجرائية' : 'Digital Services Bureau & Cost Clearing')}
+                      {welcomeMessage || (lang === 'ar' ? 'التوجيه الرقمي وتخليص المعاملات الإجرائية' : 'Digital Services Bureau & Cost Clearing')}
                     </h2>
-                    <p className="text-slate-350 text-[11.5px] leading-relaxed font-medium">
-                      ${welcomeMessage || (lang === 'ar' 
+                    <p className="text-slate-300 text-[11.5px] leading-relaxed font-medium">
+                      {welcomeMessage || (lang === 'ar' 
                         ? 'أهلاً ومرحباً بكم مع مكتب سما المملكة للخدمات المعاملات الشاملة... ننجز كافة الاستمارات الحكومية بدقة متناهية والتزام تام.' 
                         : 'Welcome to Sama Kingdom electronic terminal...')}
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto flex-shrink-0 pt-2">
+                  <div className="flex flex-col sm:flex-row gap-2.5 w-full lg:w-auto flex-shrink-0 pt-2 lg:justify-start">
                     <a
                       href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`مكتب سما المملكة الرقمي لتخليص المعاملات الحكومية وتأشيرات العمل والسفر:\nhttps://${officeDomain}`)}`}
                       target="_blank"
-                        rel="noopener noreferrer"
-                        className="bg-slate-800 hover:bg-slate-700/80 text-sky-400 border border-slate-700 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all"
-                      >
-                        <Twitter className="w-3.5 h-3.5 text-sky-400" />
-                        <span>مشاركة على منصة X</span>
-                      </a>
+                      rel="noopener noreferrer"
+                      className="bg-slate-800 hover:bg-slate-700/80 text-sky-400 border border-slate-700 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <Twitter className="w-3.5 h-3.5 text-sky-400" />
+                      <span>مشاركة على منصة X</span>
+                    </a>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (navigator.share) {
-                            navigator.share({
-                              title: 'مكتب سما المملكة',
-                              text: 'البوابة الرقمية المعتمدة للخدمات وتخليص المعاملات الحكومية',
-                              url: `https://${officeDomain}`,
-                            }).catch(() => {});
-                          } else {
-                            handleCopyDomainLink();
-                          }
-                        }}
-                        className="bg-slate-800 hover:bg-slate-755 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5 transition-all"
-                      >
-                        <Send className="w-3.5 h-3.5 text-slate-400" />
-                        <span>مشاركة النظام الشامل</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'مكتب سما المملكة',
+                            text: 'البوابة الرقمية المعتمدة للخدمات وتخليص المعاملات الحكومية',
+                            url: `https://${officeDomain}`,
+                          }).catch(() => {});
+                        } else {
+                          handleCopyDomainLink();
+                        }
+                      }}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all"
+                    >
+                      <Send className="w-3.5 h-3.5 text-slate-400" />
+                      <span>مشاركة النظام الشامل</span>
+                    </button>
                   </div>
-
-                  {/* Left Area: Digital QR-code scanner panel (5 columns) */}
-                  <div className="lg:col-span-5 flex flex-col items-center justify-center space-y-3.5 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none z-0"></div>
-                    
-                    {/* Decorative corner brackets or borders to represent scanner target */}
-                    <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-amber-500/40"></div>
-                    <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-amber-500/40"></div>
-                    <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-500/40"></div>
-                    <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-500/40"></div>
-
-                    <strong className="block text-amber-400 text-xs font-black tracking-wide z-10 flex items-center gap-1.5">
-                      <QrCode className="w-4 h-4 text-amber-500 animate-pulse" />
-                      <span>الرمز البصري الذكي للرابط (QR-Code)</span>
-                    </strong>
-
-                    {/* Stunning Custom SVG QR-Code Mockup */}
-                    <div className="w-44 h-44 bg-white p-3 rounded-2xl shadow-2xl relative z-10 transition-all duration-300 hover:scale-105 border-2 border-amber-500/30 flex items-center justify-center">
-                      <svg viewBox="0 0 100 100" className="w-full h-full text-slate-950 font-bold select-none">
-                        {/* Top-Left Scanner Block */}
-                        <path d="M 5,5 H 25 V 25 H 5 Z" fill="currentColor" />
-                        <path d="M 8,8 H 22 V 22 H 8 Z" fill="white" />
-                        <path d="M 11,11 H 19 V 19 H 11 Z" fill="currentColor" />
-                        
-                        {/* Top-Right Scanner Block */}
-                        <path d="M 75,5 H 95 V 25 H 75 Z" fill="currentColor" />
-                        <path d="M 78,8 H 92 V 22 H 78 Z" fill="white" />
-                        <path d="M 81,11 H 89 V 19 H 81 Z" fill="currentColor" />
-                        
-                        {/* Bottom-Left Scanner Block */}
-                        <path d="M 5,75 H 25 V 95 H 5 Z" fill="currentColor" />
-                        <path d="M 8,78 H 22 V 92 H 8 Z" fill="white" />
-                        <path d="M 11,81 H 19 V 89 H 11 Z" fill="currentColor" />
-
-                        {/* Small Bottom-Right Scanner Sub-block */}
-                        <path d="M 78,78 H 86 V 86 H 78 Z" fill="currentColor" />
-                        <path d="M 80,80 H 84 V 84 H 80 Z" fill="white" />
-                        <path d="M 81,81 H 83 V 83 H 81 Z" fill="currentColor" />
-
-                        {/* simulated detailed QR pattern internally */}
-                        <path d="M 32,5 H 36 V 15 H 32 Z M 40,8 H 48 V 12 H 40 Z M 52,5 H 56 V 20 H 52 Z M 60,10 H 68 V 14 H 60 Z" fill="currentColor" />
-                        <path d="M 32,18 H 38 V 22 H 32 Z M 44,18 H 48 V 26 H 44 Z M 60,18 H 64 V 28 H 60 Z M 68,22 H 72 V 26 H 68 Z" fill="currentColor" />
-                        <path d="M 5,32 H 15 V 36 H 5 Z M 18,32 H 26 V 38 H 18 Z M 5,42 H 9 V 50 H 5 Z M 14,46 H 22 V 50 H 14 Z" fill="currentColor" />
-                        <path d="M 75,32 H 85 V 36 H 75 Z M 88,32 H 95 V 40 H 88 Z M 78,44 H 84 V 52 H 78 Z M 88,46 H 92 V 54 H 88 Z" fill="currentColor" />
-                        
-                        {/* Central Custom Logo Frame cutout */}
-                        <circle cx="50" cy="50" r="14" fill="white" stroke="#f59e0b" strokeWidth="1.5" />
-                        {/* Inside central logo: Elegant Crown symbol */}
-                        <path d="M 44,53 L 42,47 L 46,49 L 50,44 L 54,49 L 58,47 L 56,53 Z" fill="#b45309" />
-                        <circle cx="50" cy="53" r="1.5" fill="#f59e0b" />
-                        <path d="M 44,54 L 56,54" stroke="#b45309" strokeWidth="1" />
-
-                        {/* remaining simulated matrices */}
-                        <path d="M 32,32 H 36 V 40 H 32 Z M 40,34 H 44 V 38 H 40 Z M 56,32 H 68 V 36 H 56 Z M 60,40 H 64 V 48 H 60 Z" fill="currentColor" />
-                        <path d="M 32,44 H 38 V 48 H 32 Z M 44,46 H 52 V 50 H 44 Z M 56,46 H 58 V 50 H 56 Z" fill="currentColor" />
-                        <path d="M 32,56 H 42 V 60 H 32 Z M 36,64 H 40 V 70 H 36 Z M 32,72 H 34 V 74 H 32 Z" fill="currentColor" />
-                        <path d="M 58,56 H 62 V 64 H 58 Z M 64,60 H 70 V 68 H 64 Z M 58,68 H 62 V 74 H 58 Z" fill="currentColor" />
-                        <path d="M 36,80 H 44 V 84 H 36 Z M 48,80 H 52 V 92 H 48 Z M 40,88 H 46 V 92 H 40 Z" fill="currentColor" />
-                        <path d="M 58,80 H 66 V 84 H 58 Z M 70,80 H 72 V 88 H 70 Z M 64,88 H 72 V 92 H 64 Z" fill="currentColor" />
-                      </svg>
-                    </div>
-
-                    <div className="z-10 font-sans space-y-1">
-                      <p className="text-slate-300 text-[10px] sm:text-[11px] leading-relaxed">
-                        امسح الرمز بكاميرا الجوال لمواصلة الحجز ومشاركة المنصة
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          window.print();
-                        }}
-                        className="text-amber-500 hover:text-amber-400 text-[10px] font-black underline hover:no-underline flex items-center justify-center gap-1 mx-auto transition-all bg-white/5 py-1 px-2.5 rounded-md border border-white/10"
-                      >
-                        <span>🖨️ طباعة ملصق الـ QR لتعليقه بالمكتب</span>
-                      </button>
-                    </div>
-                  </div>
-
                 </div>
+
+                {/* Left Area: Digital QR-code scanner panel (5 columns) */}
+                <div className="lg:col-span-5 flex flex-col items-center justify-center space-y-3.5 bg-slate-900/60 p-5 rounded-2xl border border-slate-800 text-center relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent pointer-events-none z-0"></div>
+                  
+                  {/* Decorative corner brackets or borders to represent scanner target */}
+                  <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-amber-500/40"></div>
+                  <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-amber-500/40"></div>
+                  <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-amber-500/40"></div>
+                  <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-amber-500/40"></div>
+
+                  <strong className="block text-amber-400 text-xs font-black tracking-wide z-10 flex items-center gap-1.5">
+                    <QrCode className="w-4 h-4 text-amber-500 animate-pulse" />
+                    <span>{lang === 'ar' ? 'الرمز البصري الموثق / QR Access' : 'Verified QR Access'}</span>
+                  </strong>
+
+                  {/* QR Code Container with sleek scan glow line */}
+                  <div className="relative w-32 h-32 bg-white p-2 rounded-xl shadow-lg border border-slate-200 z-10 flex items-center justify-center group hover:scale-105 transition-transform duration-200">
+                    {/* Animated green laser scanning line */}
+                    <div className="absolute left-1 right-1 h-0.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+                    
+                    {/* Stylized QR Code mock vectors */}
+                    <svg viewBox="0 0 100 100" className="w-full h-full text-slate-900" fill="currentColor">
+                      <path d="M0,0 h30 v10 h-20 v20 h-10 z M70,0 h30 v30 h-10 v-20 h-20 z M0,70 h10 v20 h20 v10 h-30 z M90,70 h10 v30 h-30 v-10 h20 z" />
+                      <rect x="15" y="15" width="15" height="15" />
+                      <rect x="70" y="15" width="15" height="15" />
+                      <rect x="15" y="70" width="15" height="15" />
+                      {/* QR Pixels layout filler */}
+                      <rect x="35" y="15" width="5" height="5" />
+                      <rect x="35" y="35" width="10" height="10" />
+                      <rect x="55" y="25" width="5" height="10" />
+                      <rect x="45" y="15" width="10" height="5" />
+                      <rect x="70" y="45" width="10" height="5" />
+                      <rect x="15" y="45" width="10" height="10" />
+                      <rect x="35" y="55" width="15" height="5" />
+                      <rect x="55" y="45" width="10" height="15" />
+                      <rect x="45" y="70" width="15" height="5" />
+                      <rect x="70" y="70" width="5" height="10" />
+                      <rect x="85" y="70" width="5" height="5" />
+                      <rect x="80" y="80" width="10" height="10" />
+                      <rect x="35" y="80" width="5" height="15" />
+                      <rect x="55" y="80" width="10" height="5" />
+                    </svg>
+                  </div>
+
+                  <div className="text-center space-y-1.5 z-10 font-sans">
+                    <span className="text-[10px] text-slate-400 font-bold block">{lang === 'ar' ? 'مسح الرمز لفتح البوابة السحابية الموحدة:' : 'Scan to access Unified Portal:'}</span>
+                    <code className="text-xs bg-slate-950 px-2 py-1 rounded text-amber-500 font-mono font-black break-all select-all hover:text-amber-400 transition-colors block border border-slate-800">
+                      https://{officeDomain}
+                    </code>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(`https://${officeDomain}`);
+                      handleCopyDomainLink();
+                    }}
+                    className="w-full py-2 bg-slate-950 hover:bg-slate-900 text-slate-300 hover:text-amber-400 border border-slate-800 rounded-xl text-[10.5px] font-black tracking-wide transition-all uppercase flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98 z-10"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    <span>{lang === 'ar' ? 'نسخ رابط الدخول الموحد' : 'Copy Access Link'}</span>
+                  </button>
+                </div>
+              </div>
             )}
 
-            {/* SERVICES PREVIEW CARDS */}
+            {/* Public Service Grid Section */}
             <section className="space-y-6">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-300 pb-4">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-900">{lang === 'ar' ? 'دليل الخدمات والتكاليف والرسوم' : 'Directory of Services, Costs & Fees'}</h2>
-                  <p className="text-slate-500 text-sm mt-1">{lang === 'ar' ? 'تحديد دقيق وموثق للتكاليف الإدارية للمكتب والرسوم التابعة للدولة قبل البدء بالمعاملة.' : 'Precise, documented details of office administrative costs and government fees before starting transactions.'}</p>
-                </div>
-                <span className="text-xs bg-slate-200 text-slate-600 hover:bg-slate-300 font-bold px-3 py-1.5 rounded-full mt-2 md:mt-0">
-                  {lang === 'ar' ? 'محدثة حسب اللوائح الضريبية لعام 2026 (15%)' : 'Updated under 2026 tax rules (15% VAT)'}
-                </span>
+              <div className="border-b border-white/10 pb-3 flex justify-between items-center" dir="rtl">
+                <h3 className="text-lg font-black text-amber-400 flex items-center gap-2">
+                  <span>💼</span>
+                  <span>{lang === 'ar' ? 'دليل وباقات المعاملات المتاحة للحجز' : 'Available Service Packages Directory'}</span>
+                </h3>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -4880,106 +4921,55 @@ export default function App() {
                   const srvTax = s.officeFee * 0.15;
                   const srvTotal = s.govFee + s.officeFee + srvTax;
 
+                  let iconElement = <FileText className="w-6 h-6 text-amber-500" />;
+                  if (s.icon === 'Briefcase') iconElement = <Briefcase className="w-6 h-6 text-amber-500" />;
+                  else if (s.icon === 'Compass') iconElement = <Compass className="w-6 h-6 text-amber-500" />;
+                  else if (s.icon === 'Users') iconElement = <Users className="w-6 h-6 text-amber-500" />;
+                  else if (s.icon === 'Truck') iconElement = <Truck className="w-6 h-6 text-amber-500" />;
+                  else if (s.icon === 'Plane') iconElement = <Plane className="w-6 h-6 text-amber-500" />;
+                  else if (s.icon === 'ShieldCheck') iconElement = <ShieldCheck className="w-6 h-6 text-amber-500" />;
+                  else if (s.icon === 'Activity') iconElement = <Activity className="w-6 h-6 text-amber-500" />;
+
                   return (
-                    <div 
-                      key={s.id} 
-                      className="bg-white rounded-2xl shadow-sm border border-slate-200/90 hover:border-amber-500 hover:shadow-lg hover:shadow-amber-500/5 transition-all duration-300 transform hover:-translate-y-1 p-6 flex flex-col justify-between relative group overflow-hidden"
-                    >
-                      {/* Top luxury decorative gradient strip */}
-                      <div className="absolute top-0 right-0 left-0 h-[4px] bg-gradient-to-r from-amber-500 to-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      
-                      <div>
-                        {/* Service Card Top */}
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200/80 group-hover:bg-amber-100/70 transition-all duration-300">
-                            {renderServiceIcon(s.icon, "w-6 h-6 text-amber-700")}
+                    <div key={s.id} className="bg-slate-900/60 border border-white/5 rounded-2xl p-5 flex flex-col justify-between hover:border-amber-500/20 transition-all hover:scale-[1.01] duration-300 shadow-xl group">
+                      <div className="space-y-3.5 text-right" dir="rtl">
+                        <div className="flex justify-between items-start">
+                          <div className="bg-white/5 p-2 rounded-xl group-hover:bg-amber-500/10 transition-colors border border-white/5 group-hover:border-amber-500/10">
+                            {iconElement}
                           </div>
-                          <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-wider">
-                            {s.category === 'visa' && (lang === 'ar' ? 'خدمات تأشيرات' : 'Visas Services')}
-                            {s.category === 'gov' && (lang === 'ar' ? 'تعقيب ومراجعة دائرية' : 'Gov Clearance')}
-                            {s.category === 'transport' && (lang === 'ar' ? 'نقل ومواصلات' : 'Transport & Logistics')}
-                            {s.category === 'other' && (lang === 'ar' ? 'خدمات عامة' : 'General Services')}
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-white/5 text-slate-300 rounded border border-white/5">
+                            {s.category === 'visa' && (lang === 'ar' ? '🛂 تأشيرات' : '🛂 Visas')}
+                            {s.category === 'gov' && (lang === 'ar' ? '🏛️ حكومي' : '🏛️ Gov')}
+                            {s.category === 'transport' && (lang === 'ar' ? '🚚 نقل' : '🚚 Transport')}
+                            {s.category === 'other' && (lang === 'ar' ? '⚙️ عام' : '⚙️ Other')}
                           </span>
                         </div>
 
-                        {/* Title and details */}
-                        <h3 className="text-lg font-black text-slate-900 group-hover:text-amber-700 transition-colors duration-200 mb-2">{getTranslatedServiceName(s.name)}</h3>
-                        <p className="text-slate-500 text-xs leading-relaxed mb-5 line-clamp-3 font-medium">
-                          {getTranslatedServiceDesc(s.description)}
-                        </p>
+                        <div>
+                          <h4 className="text-base font-black text-white group-hover:text-amber-300 transition-colors">{getTranslatedServiceName(s.name)}</h4>
+                          <p className="text-slate-400 text-xs mt-1 font-medium leading-relaxed line-clamp-2 h-8">{s.description}</p>
+                        </div>
+
+                        <div className="bg-white/5 p-3 rounded-xl border border-white/5 font-mono text-[11px] leading-relaxed select-none space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-sans">{lang === 'ar' ? 'رسوم الدولة (معفى):' : 'Government Tariffs (Exempt):'}</span>
+                            <span className="text-slate-200 font-bold">{s.govFee.toFixed(2)} ر.س</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-400 font-sans">{lang === 'ar' ? 'أتعاب المكتب (خاضع):' : 'Office Service Fees:'}</span>
+                            <span className="text-slate-200 font-bold">{s.officeFee.toFixed(2)} ر.س</span>
+                          </div>
+                          <div className="flex justify-between text-slate-400 text-[10px]">
+                            <span className="font-sans">{lang === 'ar' ? 'ضريبة القيمة المضافة (15%):' : '15% VAT Value:'}</span>
+                            <span>{srvTax.toFixed(2)} ر.س</span>
+                          </div>
+                          <div className="flex justify-between border-t border-white/5 pt-1.5 mt-1.5 font-bold text-amber-400 text-xs">
+                            <span className="font-sans">{lang === 'ar' ? 'الإجمالي النهائي التقديري:' : 'Grand Accrued Total:'}</span>
+                            <span>{srvTotal.toFixed(2)} ر.س</span>
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Fee Calculator Break down with improved border and contrast */}
-                      <div className="border border-slate-150 mt-4 space-y-2.5 bg-slate-50/75 p-3.5 rounded-xl text-xs font-mono">
-                        <div className="flex justify-between text-slate-500">
-                          <span className="font-sans font-bold">{lang === 'ar' ? 'الرسوم الحكومية للدولة:' : 'Gov Fees:'}</span>
-                          <span className="font-extrabold text-slate-900 text-left">
-                            {s.govFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
-                            {selectedCountry.code !== 'SA' && (
-                              <span className="text-[10px] text-emerald-600 font-sans font-bold block">
-                                (≈ {convertSARToCountryCurrency(s.govFee)} {selectedCountry.currencySymbol})
-                              </span>
-                            )}
-                            {showUSDPrice && (
-                              <span className="text-[10px] text-slate-500 font-sans font-normal block">
-                                (${convertSARtoUSD(s.govFee)} USD)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                        
-                        <div className="flex justify-between text-slate-500 pt-1.5 border-t border-slate-200/50">
-                          <span className="font-sans font-bold">{lang === 'ar' ? 'أتعاب سما المملكة:' : 'Sama Al-Mamlaka Fee:'}</span>
-                          <span className="font-extrabold text-slate-900 text-left">
-                            {s.officeFee.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
-                            {selectedCountry.code !== 'SA' && (
-                              <span className="text-[10px] text-emerald-600 font-sans font-bold block">
-                                (≈ {convertSARToCountryCurrency(s.officeFee)} {selectedCountry.currencySymbol})
-                              </span>
-                            )}
-                            {showUSDPrice && (
-                              <span className="text-[10px] text-slate-500 font-sans font-normal block">
-                                (${convertSARtoUSD(s.officeFee)} USD)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between text-slate-500 pt-1.5 border-t border-slate-200/50">
-                          <span className="font-sans font-semibold">{lang === 'ar' ? 'ضريبة القيمة المضافة (15%):' : 'VAT (15%):'}</span>
-                          <span className="font-extrabold text-slate-900 text-left">
-                            {srvTax.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
-                            {selectedCountry.code !== 'SA' && (
-                              <span className="text-[10px] text-emerald-600 font-sans font-bold block">
-                                (≈ {convertSARToCountryCurrency(srvTax)} {selectedCountry.currencySymbol})
-                              </span>
-                            )}
-                            {showUSDPrice && (
-                              <span className="text-[10px] text-slate-500 font-sans font-normal block">
-                                (${convertSARtoUSD(srvTax)} USD)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Highly emphasized grand total block with accent color */}
-                        <div className="flex justify-between items-center font-bold text-amber-950 bg-amber-500/10 p-2.5 rounded-lg border border-amber-500/20 pt-2 pb-2 mt-2 text-xs">
-                          <span className="font-sans font-extrabold">{lang === 'ar' ? 'الإجمالي التقريبى:' : 'Total Cost:'}</span>
-                          <span className="text-left font-extrabold">
-                            {srvTotal.toFixed(2)} {lang === 'ar' ? 'ر.س' : 'SAR'}
-                            {selectedCountry.code !== 'SA' && (
-                              <span className="text-[10px] text-emerald-700 font-sans font-black block">
-                                (≈ {convertSARToCountryCurrency(srvTotal)} {selectedCountry.currencySymbol})
-                              </span>
-                            )}
-                            {showUSDPrice && (
-                              <span className="text-[10px] text-amber-700 font-sans font-black block">
-                                (${convertSARtoUSD(srvTotal)} USD)
-                              </span>
-                            )}
-                          </span>
-                        </div>
-                      </div>
 
                       {/* Linked Payment Methods representing service-specific billing */}
                       <div className={`mt-3.5 space-y-1 select-none ${lang === 'ar' ? 'text-right' : 'text-left'}`}>
@@ -6263,6 +6253,9 @@ export default function App() {
                   <option value="services">⚙️ إدارة دليل الخدمات وأسعار العمليات</option>
                   <option value="whatsapp">💬 إشعارات واتساب الفورية {whatsappLogs.length > 0 ? `(${whatsappLogs.length})` : ''}</option>
                   <option value="jobs">💼 إدارة التوظيف والوظائف ({jobVacancies.length})</option>
+                  <option value="archiving">❄️ الأرشفة السحابية والـ Cold Storage</option>
+                  <option value="branding">🎨 إدارة الهوية البصرية والشعار</option>
+                  <option value="db_audit">🛡️ سجل الأمان ونشاط المسؤولين</option>
                 </select>
               </div>
 
@@ -6306,6 +6299,30 @@ export default function App() {
                   }`}
                 >
                   💼 إدارة التوظيف والوظائف ({jobVacancies.length})
+                </button>
+                <button
+                  onClick={() => setAdminTab('archiving')}
+                  className={`px-3 py-1.5 rounded text-xs font-bold transition-all whitespace-nowrap bg-blue-950/20 text-blue-400 border border-blue-500/20 hover:bg-blue-900/40 ${
+                    adminTab === 'archiving' ? 'bg-blue-600 text-slate-950 border-blue-500 font-extrabold shadow' : ''
+                  }`}
+                >
+                  ❄️ الأرشفة السحابية والـ Cold Storage
+                </button>
+                <button
+                  onClick={() => setAdminTab('branding')}
+                  className={`px-3 py-1.5 rounded text-xs font-bold transition-all whitespace-nowrap bg-amber-950/20 text-amber-400 border border-amber-500/25 hover:bg-amber-900/40 ${
+                    adminTab === 'branding' ? 'bg-amber-600 text-slate-950 border-amber-500 font-extrabold shadow' : ''
+                  }`}
+                >
+                  🎨 الهوية وبناء الشعار الذكي
+                </button>
+                <button
+                  onClick={() => setAdminTab('db_audit')}
+                  className={`px-3 py-1.5 rounded text-xs font-bold transition-all whitespace-nowrap bg-violet-950/20 text-violet-400 border border-violet-500/25 hover:bg-violet-900/40 ${
+                    adminTab === 'db_audit' ? 'bg-violet-600 text-slate-950 border-violet-500 font-extrabold shadow' : ''
+                  }`}
+                >
+                  🛡️ تدقيق وسجل قاعدة البيانات
                 </button>
               </div>
             </div>
@@ -10692,6 +10709,25 @@ export default function App() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* --- ADMIN INTERNAL VIEW 7: COLD STORAGE ARCHIVING & RECOVERY --- */}
+            {adminTab === 'archiving' && (
+              <ColdStorageManager />
+            )}
+
+            {/* --- ADMIN INTERNAL VIEW 8: BRANDING & LOGO IDENTITY MANAGER --- */}
+            {adminTab === 'branding' && (
+              <LogoManager 
+                currentLogo={officeLogo} 
+                onLogoChange={handleLogoUpdate} 
+                lang={lang}
+              />
+            )}
+
+            {/* --- ADMIN INTERNAL VIEW 9: DATABASE AUDIT & LOGIN MONITOR --- */}
+            {adminTab === 'db_audit' && (
+              <DBAuditManager lang={lang} />
             )}
             
           </div>
